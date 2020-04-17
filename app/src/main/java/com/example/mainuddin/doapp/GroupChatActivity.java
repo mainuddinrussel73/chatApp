@@ -1,8 +1,11 @@
 package com.example.mainuddin.doapp;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
@@ -22,9 +25,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -44,6 +51,8 @@ public class GroupChatActivity extends AppCompatActivity
     private LinearLayoutManager linearLayoutManager;
     private GroupMessageAdapter messageAdapter;
     private RecyclerView userMessagesList;
+    private DatabaseReference GroupRef;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -62,6 +71,7 @@ public class GroupChatActivity extends AppCompatActivity
         UsersRef = FirebaseDatabase.getInstance().getReference().child("Users");
         GroupNameRef = FirebaseDatabase.getInstance().getReference().child("Groups").child(currentGroupName);
 
+        GroupRef = FirebaseDatabase.getInstance().getReference().child("Groups");
 
 
         InitializeFields();
@@ -77,6 +87,142 @@ public class GroupChatActivity extends AppCompatActivity
                 SaveMessageInfoToDatabase();
 
                 userMessageInput.setText("");
+
+            }
+        });
+
+        ImageButton remove_user = findViewById(R.id.remove_user);
+        remove_user.setVisibility(View.GONE);
+        GroupNameRef.child(currentUserID).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(dataSnapshot.getValue(String.class).equals("leader")){
+                    remove_user.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                //Log.w(TAG, "onCancelled", databaseError.toException());
+            }
+        });
+
+        remove_user.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GroupNameRef.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot)
+                    {
+                        Set<String> set = new HashSet<>();
+                        Iterator iterator = dataSnapshot.getChildren().iterator();
+
+                        while (iterator.hasNext())
+                        {
+
+                            DataSnapshot snapshot = ((DataSnapshot)iterator.next());
+                            System.out.println(snapshot.getValue());
+
+                            if(snapshot.getValue().equals("member")){
+                                set.add(snapshot.getKey());
+
+
+
+                            }
+
+
+
+                        }
+
+
+                        AlertDialog.Builder builderSingle = new AlertDialog.Builder(GroupChatActivity.this);
+                        builderSingle.setIcon(R.drawable.chat);
+                        builderSingle.setTitle("Select One Name:-");
+
+                        final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(GroupChatActivity.this, android.R.layout.select_dialog_singlechoice);
+
+                        HashMap<String,String> map = new HashMap<>();
+                        for (String sa:
+                             set) {
+                            FirebaseDatabase.getInstance().getReference().child("Users").child(sa).addChildEventListener(new ChildEventListener() {
+                                @Override
+                                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+
+                                    if(dataSnapshot.getKey().equals("name")){
+                                        System.out.println(dataSnapshot.getValue().toString());
+                                        String name = dataSnapshot.getValue().toString();
+                                        map.put(name,sa);
+                                        arrayAdapter.add(name);
+                                    }
+
+
+                                }
+
+                                @Override
+                                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+                                }
+
+                                @Override
+                                public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+                                }
+
+                                @Override
+                                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+
+
+                        }
+
+
+                        builderSingle.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+
+                        builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String strName = arrayAdapter.getItem(which);
+                                AlertDialog.Builder builderInner = new AlertDialog.Builder(GroupChatActivity.this);
+                                builderInner.setMessage(strName);
+                                builderInner.setTitle("Your Selected Item is");
+                                builderInner.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,int which) {
+                                        dialog.dismiss();
+
+                                        System.out.println(map.get(strName)+"val");
+                                        System.out.println(GroupNameRef.child(map.get(strName)).removeValue().isSuccessful());
+
+
+                                    }
+                                });
+                                builderInner.show();
+                            }
+                        });
+                        builderSingle.show();
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+
+
 
             }
         });
@@ -212,13 +358,34 @@ public class GroupChatActivity extends AppCompatActivity
 
     private void DisplayMessages(DataSnapshot dataSnapshot)
     {
-        GroupMessage messages = dataSnapshot.getValue(GroupMessage.class);
 
-        messagesList.add(messages);
+        GroupMessage messages = new GroupMessage();;
+
+        for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+
+            System.out.println(postSnapshot.getValue());
+            if(postSnapshot.getKey().equals("date")){
+                messages = new GroupMessage();
+                messages.setDate(postSnapshot.getValue().toString());
+            }else if(postSnapshot.getKey().equals("name")){
+                messages.setName(postSnapshot.getValue().toString());
+            }else if(postSnapshot.getKey().equals("message")){
+                messages.setMessage(postSnapshot.getValue().toString());
+            }else if(postSnapshot.getKey().equals("time")){
+                messages.setTime(postSnapshot.getValue().toString());
+            }else if(postSnapshot.getKey().equals("from")){
+                messages.setFrom(postSnapshot.getValue().toString());
+            }else if(postSnapshot.getKey().equals("type")){
+                messages.setType(postSnapshot.getValue().toString());
+                messagesList.add(messages);
+            }
+
+        }
 
         messageAdapter.notifyDataSetChanged();
-
         userMessagesList.smoothScrollToPosition(userMessagesList.getAdapter().getItemCount());
 
     }
+
+
 }

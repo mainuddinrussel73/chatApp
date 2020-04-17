@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.example.mainuddin.doapp.R;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -32,7 +33,8 @@ public class GroupsFragment extends Fragment
     private ArrayList<String> list_of_groups = new ArrayList<>();
 
     private DatabaseReference GroupRef;
-
+    private FirebaseAuth mAuth;
+    private String currentUserID;
 
 
     public GroupsFragment() {
@@ -45,6 +47,11 @@ public class GroupsFragment extends Fragment
                              Bundle savedInstanceState)
     {
         groupFragmentView = inflater.inflate(R.layout.fragment_groups, container, false);
+
+
+
+        mAuth = FirebaseAuth.getInstance();
+        currentUserID = mAuth.getCurrentUser().getUid();
 
 
         GroupRef = FirebaseDatabase.getInstance().getReference().child("Groups");
@@ -97,7 +104,21 @@ public class GroupsFragment extends Fragment
 
                 while (iterator.hasNext())
                 {
-                    set.add(((DataSnapshot)iterator.next()).getKey());
+
+                    DataSnapshot snapshot = ((DataSnapshot)iterator.next());
+                    Iterator iterator1 = snapshot.getChildren().iterator();
+
+                    while(iterator1.hasNext()){
+                        DataSnapshot snapshot2 = ((DataSnapshot)iterator1.next());
+                        System.out.println(snapshot2.getKey());
+
+                        if(snapshot2.getKey().equals(currentUserID)){
+                            set.add(snapshot.getKey());
+                        }
+                    }
+
+
+
                 }
 
                 list_of_groups.clear();
