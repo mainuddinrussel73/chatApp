@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="7dp"
+    android:layout_marginBottom="3dp"
+    >
+
+    <RelativeLayout
+        android:id="@+id/message_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="15dp">
+
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="?android:attr/actionBarSize"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+
+
+            >
+
+            <LinearLayout
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/receiver_messages_layout"
+                >
+
+                <TextView
+                    android:id="@+id/sender_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="#12B6F3"
+                    android:layout_marginLeft="15dp"
+                    android:layout_marginRight="15dp"
+                    android:layout_marginTop="15dp">
+
+                </TextView>
+
+                <TextView
+                    android:id="@+id/poll_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="20sp"
+                    android:layout_margin="15dp"
+
+
+                    >
+
+
+
+                </TextView>
+
+                <RadioGroup
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:weightSum="1"
+                    android:id="@+id/radioGroup"
+                    >
+
+                    <RadioButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Yes"
+                        android:id="@+id/radioButton"
+                        android:checked="false"
+                        android:layout_marginLeft="15dp"
+                        android:textColor="@color/common_google_signin_btn_text_dark_focused"
+                        android:textSize="15dp" />
+
+                    <RadioButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No"
+                        android:id="@+id/radioButton2"
+                        android:layout_marginLeft="15dp"
+                        android:checked="false"
+                        android:textColor="@color/common_google_signin_btn_text_dark_focused"
+                        android:textSize="15dp"
+                        />
+                </RadioGroup>
+
+                <TextView
+                    android:id="@+id/poll_count"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/common_google_signin_btn_text_dark_focused"
+                    android:layout_margin="15dp"
+                    android:textSize="10sp"
+                    android:text="5 votes">
+
+                </TextView>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </RelativeLayout>
+</RelativeLayout>

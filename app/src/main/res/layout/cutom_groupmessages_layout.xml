@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/message_profile_image"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="10dp"
+        android:src="@drawable/profile_image"
+        />
+
+    <TextView
+        android:id="@+id/receiver_message_text"
+        android:layout_width="190dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="3dp"
+        android:layout_toEndOf="@+id/message_profile_image"
+        android:background="@drawable/receiver_messages_layout"
+        android:text="receiver messages here"
+        android:padding="10dp"
+        android:textSize="14sp"
+        android:textColorLink="#3671A8"
+        android:textColor="@android:color/black"
+        />
+
+
+
+    <RelativeLayout
+        android:id="@+id/audio_in"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="40dp"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/audio_in"></include>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/audio_out"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/audio_out"></include>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/file_in"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="40dp"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/file_in"></include>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/file_out"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/file_out"></include>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/poll_in"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="40dp"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/poll_in"></include>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/poll_out"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/poll_out"></include>
+    </RelativeLayout>
+
+
+    <com.infinityandroid.roundedimageview.RoundedImageView
+        android:id="@+id/message_sender_image_view"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="5dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+        app:corner_radius="10"
+        />
+
+    <com.infinityandroid.roundedimageview.RoundedImageView
+        android:id="@+id/message_sender_like_view"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="5dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/ic_like"
+        android:adjustViewBounds="true"
+        app:corner_radius="10"
+        />
+
+    <com.infinityandroid.roundedimageview.RoundedImageView
+        android:id="@+id/message_receiver_image_view"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="13dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+        app:corner_radius="10"
+        />
+
+    <com.infinityandroid.roundedimageview.RoundedImageView
+        android:id="@+id/message_receiver_like_view"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="50dp"
+        android:background="@drawable/ic_like"
+        android:layout_marginTop="13dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+        app:corner_radius="10"
+        />
+
+
+    <TextView
+        android:id="@+id/sender_messsage_text"
+        android:layout_width="190dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="10dp"
+        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:background="@drawable/sender_messages_layout"
+        android:text="sender messages"
+        android:textSize="14sp"
+        android:padding="10dp"
+        android:textColorLink="#A3CEF7"
+        android:layout_marginRight="5dp"
+        android:textColor="@android:color/white"
+        />
+
+    <TextView
+        android:id="@+id/sender_messsage_seen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="60dp"
+        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:text="seen"
+        android:textSize="10sp"
+        android:padding="10dp"
+        android:textStyle="bold"
+        android:layout_marginRight="5dp"
+        android:textColor="#7a7b7d">
+
+    </TextView>
+
+    <TextView
+        android:id="@+id/sender_file_seen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="0dp"
+        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:text="seen"
+        android:textSize="10sp"
+        android:padding="10dp"
+        android:layout_below="@+id/file_out"
+        android:textStyle="bold"
+        android:layout_marginRight="5dp"
+        android:textColor="#7a7b7d">
+
+    </TextView>
+
+    <TextView
+        android:id="@+id/sender_img_seen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="150dp"
+        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:text="seen"
+        android:textSize="10sp"
+        android:padding="10dp"
+        android:textStyle="bold"
+        android:layout_marginRight="5dp"
+        android:textColor="#7a7b7d">
+
+    </TextView>
+
+    <TextView
+        android:id="@+id/sender_m_seen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="0dp"
+        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:text="seen"
+        android:textSize="10sp"
+        android:padding="10dp"
+        android:textStyle="bold"
+        android:layout_below="@+id/sender_messsage_text"
+        android:layout_marginRight="5dp"
+        android:textColor="#7a7b7d">
+
+    </TextView>
+
+</RelativeLayout>

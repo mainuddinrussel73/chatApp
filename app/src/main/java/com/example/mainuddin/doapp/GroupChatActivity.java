@@ -13,6 +13,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mainuddin.doapp.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -31,13 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class GroupChatActivity extends AppCompatActivity
+public class GroupChatActivity extends AppCompatActivity implements ExampleBottomSheetDialog.BottomSheetListener
 {
     private Toolbar mToolbar;
     private ImageButton SendMessageButton;
@@ -46,12 +49,13 @@ public class GroupChatActivity extends AppCompatActivity
     private FirebaseAuth mAuth;
     private DatabaseReference UsersRef, GroupNameRef, GroupMessageKeyRef;
 
-    private String currentGroupName, currentUserID, currentUserName, currentDate, currentTime;
+    public static String currentGroupName, currentUserID, currentUserName, currentDate, currentTime;
     private final List<GroupMessage> messagesList = new ArrayList<>();
     private LinearLayoutManager linearLayoutManager;
     private GroupMessageAdapter messageAdapter;
     private RecyclerView userMessagesList;
     private DatabaseReference GroupRef;
+    public static  String msgKey;
 
 
     @Override
@@ -88,6 +92,15 @@ public class GroupChatActivity extends AppCompatActivity
 
                 userMessageInput.setText("");
 
+            }
+        });
+
+        ImageButton buttonOpenBottomSheet = findViewById(R.id.send_options_btn);
+        buttonOpenBottomSheet.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ExampleBottomSheetDialog bottomSheet = new ExampleBottomSheetDialog();
+                bottomSheet.show(getSupportFragmentManager(), "exampleBottomSheet");
             }
         });
 
@@ -135,7 +148,7 @@ public class GroupChatActivity extends AppCompatActivity
                         }
 
 
-                        AlertDialog.Builder builderSingle = new AlertDialog.Builder(GroupChatActivity.this);
+                        AlertDialog.Builder builderSingle = new AlertDialog.Builder(GroupChatActivity.this,R.style.RoundedDialog);
                         builderSingle.setIcon(R.drawable.chat);
                         builderSingle.setTitle("Select One Name:-");
 
@@ -194,7 +207,7 @@ public class GroupChatActivity extends AppCompatActivity
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 String strName = arrayAdapter.getItem(which);
-                                AlertDialog.Builder builderInner = new AlertDialog.Builder(GroupChatActivity.this);
+                                AlertDialog.Builder builderInner = new AlertDialog.Builder(GroupChatActivity.this,R.style.RoundedDialog);
                                 builderInner.setMessage(strName);
                                 builderInner.setTitle("Your Selected Item is");
                                 builderInner.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -322,6 +335,7 @@ public class GroupChatActivity extends AppCompatActivity
     {
         String message = userMessageInput.getText().toString();
         String messagekEY = GroupNameRef.push().getKey();
+        msgKey = messagekEY;
 
         if (TextUtils.isEmpty(message))
         {
@@ -346,9 +360,13 @@ public class GroupChatActivity extends AppCompatActivity
             HashMap<String, Object> messageInfoMap = new HashMap<>();
             messageInfoMap.put("name", currentUserName);
             messageInfoMap.put("message", message);
+            messageInfoMap.put("messageKey", messagekEY);
+            messageInfoMap.put("groupName",currentGroupName);
             messageInfoMap.put("date", currentDate);
             messageInfoMap.put("time", currentTime);
             messageInfoMap.put("from",currentUserID);
+            messageInfoMap.put("countY", 0);
+            messageInfoMap.put("countN", 0);
             messageInfoMap.put("type", "text");
             GroupMessageKeyRef.updateChildren(messageInfoMap);
         }
@@ -364,8 +382,16 @@ public class GroupChatActivity extends AppCompatActivity
         for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
 
             System.out.println(postSnapshot.getValue());
-            if(postSnapshot.getKey().equals("date")){
+            if(postSnapshot.getKey().equals("countN")){
                 messages = new GroupMessage();
+                messages.setPollN(Integer.parseInt(postSnapshot.getValue().toString()));
+            }else if(postSnapshot.getKey().equals("countY")){
+                messages.setPollY(Integer.parseInt(postSnapshot.getValue().toString()));
+            }else if(postSnapshot.getKey().equals("groupName")){
+                messages.setGroupName(postSnapshot.getValue().toString());
+            } else if(postSnapshot.getKey().equals("messageKey")){
+                messages.setMessageKey(postSnapshot.getValue().toString());
+            } else if(postSnapshot.getKey().equals("date")){
                 messages.setDate(postSnapshot.getValue().toString());
             }else if(postSnapshot.getKey().equals("name")){
                 messages.setName(postSnapshot.getValue().toString());
@@ -386,6 +412,60 @@ public class GroupChatActivity extends AppCompatActivity
         userMessagesList.smoothScrollToPosition(userMessagesList.getAdapter().getItemCount());
 
     }
+    private void SendPoll()
+    {
+
+        String message = userMessageInput.getText().toString();
+        String messagekEY = GroupNameRef.push().getKey();
+        msgKey = messagekEY;
+
+        if (TextUtils.isEmpty(message))
+        {
+            Toast.makeText(this, "Please write message first...", Toast.LENGTH_SHORT).show();
+        }
+        else {
 
 
+            Calendar calForDate = Calendar.getInstance();
+            SimpleDateFormat currentDateFormat = new SimpleDateFormat("MMM dd, yyyy");
+            currentDate = currentDateFormat.format(calForDate.getTime());
+
+            Calendar calForTime = Calendar.getInstance();
+            SimpleDateFormat currentTimeFormat = new SimpleDateFormat("hh:mm a");
+            currentTime = currentTimeFormat.format(calForTime.getTime());
+
+
+            HashMap<String, Object> groupMessageKey = new HashMap<>();
+            GroupNameRef.updateChildren(groupMessageKey);
+
+            GroupMessageKeyRef = GroupNameRef.child(messagekEY);
+
+            HashMap<String, Object> messageInfoMap = new HashMap<>();
+            messageInfoMap.put("name", currentUserName);
+            messageInfoMap.put("message", message);
+            messageInfoMap.put("messageKey", messagekEY);
+            messageInfoMap.put("groupName",currentGroupName);
+            messageInfoMap.put("date", currentDate);
+            messageInfoMap.put("time", currentTime);
+            messageInfoMap.put("from", currentUserID);
+            messageInfoMap.put("countY", 0);
+            messageInfoMap.put("countN", 0);
+            messageInfoMap.put("type", "poll");
+            GroupMessageKeyRef.updateChildren(messageInfoMap);
+
+
+        }
+
+
+    }
+
+
+    @Override
+    public void onButtonClicked(String text) {
+
+        if(text.equals("poll")){
+            SendPoll();
+        }
+
+    }
 }

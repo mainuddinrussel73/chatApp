@@ -19,9 +19,12 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -68,7 +71,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ChatActivity extends AppCompatActivity
+public class ChatActivity extends AppCompatActivity implements ExampleBottomSheetDialog.BottomSheetListener
 {
     private String messageReceiverID, messageReceiverName, messageReceiverImage, messageSenderID;
 
@@ -132,6 +135,43 @@ public class ChatActivity extends AppCompatActivity
         userName.setText(messageReceiverName);
         Picasso.get().load(messageReceiverImage).placeholder(R.drawable.profile_image).into(userImage);
 
+        SendMessageButton.setVisibility(View.GONE);
+        SendLikeButton.setVisibility(View.VISIBLE);
+
+
+        MessageInputText.addTextChangedListener(new TextWatcher() {
+
+            public void afterTextChanged(Editable s) {
+                if(!MessageInputText.getText().toString().equals("")){
+                    System.out.println("kl");
+                    SendMessageButton.setVisibility(View.VISIBLE);
+                    SendLikeButton.setVisibility(View.GONE);
+                }else{
+                    SendMessageButton.setVisibility(View.GONE);
+                    SendLikeButton.setVisibility(View.VISIBLE);
+                }
+            }
+
+            public void beforeTextChanged(CharSequence s, int start,
+                                          int count, int after) {
+            }
+
+            public void onTextChanged(CharSequence s, int start,
+                                      int before, int count) {
+
+            }
+        });
+
+
+
+        ImageButton buttonOpenBottomSheet = findViewById(R.id.send_options_btn);
+        buttonOpenBottomSheet.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ExampleBottomSheetDialog bottomSheet = new ExampleBottomSheetDialog();
+                bottomSheet.show(getSupportFragmentManager(), "exampleBottomSheet");
+            }
+        });
 
         SendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -158,6 +198,7 @@ public class ChatActivity extends AppCompatActivity
 
 
         updateUserStatus("online");
+
 
 
         SendFilesButton.setOnClickListener(new View.OnClickListener() {
@@ -276,7 +317,7 @@ public class ChatActivity extends AppCompatActivity
                     call = sinchClient.getCallClient().callUser(messageReceiverID);
                     call.addCallListener(new SinchCallListener());
 
-                    builder = new AlertDialog.Builder(ChatActivity.this);
+                    builder = new AlertDialog.Builder(ChatActivity.this,R.style.RoundedDialog);
                     builder.setMessage("Calling.");
                     builder.setCancelable(false);
                     builder.setPositiveButton("Hang Up", new DialogInterface.OnClickListener() {
@@ -302,6 +343,11 @@ public class ChatActivity extends AppCompatActivity
 
 
 
+
+    }
+
+    @Override
+    public void onButtonClicked(String text) {
 
     }
 
@@ -361,7 +407,7 @@ public class ChatActivity extends AppCompatActivity
         public void onIncomingCall(CallClient callClient, final Call incomingcall) {
 
 
-            builder1 = new AlertDialog.Builder(ChatActivity.this);
+            builder1 = new AlertDialog.Builder(ChatActivity.this,R.style.RoundedDialog);
             builder1.setMessage("CALLING...");
             builder1.setPositiveButton("Reject", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {

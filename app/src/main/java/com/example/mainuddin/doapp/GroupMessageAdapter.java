@@ -28,6 +28,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -68,6 +70,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 import static android.text.Spanned.SPAN_INCLUSIVE_INCLUSIVE;
+import static com.example.mainuddin.doapp.GroupChatActivity.currentGroupName;
+import static com.example.mainuddin.doapp.GroupChatActivity.msgKey;
+import static org.webrtc.ContextUtils.getApplicationContext;
 
 public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapter.MessageViewHolder>
 {
@@ -91,12 +96,17 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
         public CircleImageView receiverProfileImage;
         public RoundedImageView messageSenderPicture, messageReceiverPicture,likeS,likeR;
         public RelativeLayout audioIn,audioOut;
+        public RelativeLayout fileIn,fileOut;
+        public RelativeLayout pollIn,pollOut;
         TextView dateS,dateR;
         ImageButton playS,playR;
         SeekBar seekS,seekR;
         TextView audioTS,audioTR;
-        TextView sender_seen,sender_img_seen,sender_m_seen;
-
+        TextView sender_seen,sender_img_seen,sender_m_seen,sender_file_seen;
+        ImageView fileS,fileR;
+        TextView fileST,fileRT,senderNameR,senderNameS,pollCS,pollCR,pollTextR,pollTextS;
+        private RadioGroup radioSexGroupR,radioSexGroupS;
+        private RadioButton radioSexButtonR1,getRadioSexButtonR2,radioSexButtonS1,getRadioSexButtonS2;
 
 
         public MessageViewHolder(@NonNull View itemView)
@@ -110,6 +120,15 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
             messageSenderPicture = itemView.findViewById(R.id.message_sender_image_view);
             audioIn = itemView.findViewById(R.id.audio_in);
             audioOut = itemView.findViewById(R.id.audio_out);
+
+            pollIn = itemView.findViewById(R.id.poll_in);
+            pollOut = itemView.findViewById(R.id.poll_out);
+
+
+            fileIn = itemView.findViewById(R.id.file_in);
+            fileOut = itemView.findViewById(R.id.file_out);
+
+
             dateS = audioOut.findViewById(R.id.date_text);
             dateR = audioIn.findViewById(R.id.date_text);
 
@@ -122,12 +141,33 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
             audioTR = audioIn.findViewById(R.id.txt_audio_time);
             audioTS = audioOut.findViewById(R.id.txt_audio_time);
 
+            fileS = fileOut.findViewById(R.id.thumbnail_file_icon);
+            fileR = fileIn.findViewById(R.id.thumbnail_file_icon);
+
+            fileST = fileOut.findViewById(R.id.sender_file_text);
+            fileRT = fileIn.findViewById(R.id.receiver_file_text);
+
             sender_seen = itemView.findViewById(R.id.sender_messsage_seen);
             sender_img_seen = itemView.findViewById(R.id.sender_img_seen);
             sender_m_seen = itemView.findViewById(R.id.sender_m_seen);
+            sender_file_seen = itemView.findViewById(R.id.sender_file_seen);
 
             likeS = itemView.findViewById(R.id.message_sender_like_view);
             likeR = itemView.findViewById(R.id.message_receiver_like_view);
+
+            senderNameR = pollIn.findViewById(R.id.sender_name);
+            senderNameS = pollOut.findViewById(R.id.sender_name);
+
+            pollCR = pollIn.findViewById(R.id.poll_count);
+            pollCS = pollOut.findViewById(R.id.poll_count);
+
+            pollTextR = pollIn.findViewById(R.id.poll_text);
+            pollTextS = pollOut.findViewById(R.id.poll_text);
+
+            radioSexGroupR = pollIn.findViewById(R.id.radioGroup);
+            radioSexGroupS = pollOut.findViewById(R.id.radioGroup);
+
+
 
 
         }
@@ -141,7 +181,7 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
     public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i)
     {
         View view = LayoutInflater.from(viewGroup.getContext())
-                .inflate(R.layout.custom_messages_layout, viewGroup, false);
+                .inflate(R.layout.cutom_groupmessages_layout, viewGroup, false);
 
         mAuth = FirebaseAuth.getInstance();
 
@@ -190,11 +230,16 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
         messageViewHolder.messageReceiverPicture.setVisibility(View.GONE);
         messageViewHolder.audioIn.setVisibility(View.GONE);
         messageViewHolder.audioOut.setVisibility(View.GONE);
+        messageViewHolder.pollIn.setVisibility(View.GONE);
+        messageViewHolder.pollOut.setVisibility(View.GONE);
+        messageViewHolder.fileIn.setVisibility(View.GONE);
+        messageViewHolder.fileOut.setVisibility(View.GONE);
         messageViewHolder.likeS.setVisibility(View.GONE);
         messageViewHolder.likeR.setVisibility(View.GONE);
         messageViewHolder.sender_seen.setVisibility(View.GONE);
         messageViewHolder.sender_img_seen.setVisibility(View.GONE);
         messageViewHolder.sender_m_seen.setVisibility(View.GONE);
+        messageViewHolder.sender_file_seen.setVisibility(View.GONE);
 
 
         if (fromMessageType.equals("text")) {
@@ -263,6 +308,89 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
 
 
 
+
+
+        }
+        else if(fromMessageType.equals("poll")){
+
+            if (fromUserID.equals(messageSenderId))
+            {
+
+                messageViewHolder.pollOut.setVisibility(View.VISIBLE);
+                messageViewHolder.senderNameS.setText(messages.getName());
+
+                String oth = "Yes : "+messages.getPollY()+"No : "+messages.getPollN() +"  "+ messages.getTime() + " - " + messages.getDate();
+
+                messageViewHolder.pollCS.setText(oth);
+                messageViewHolder.pollTextS.setText(messages.getMessage());
+
+
+
+                messageViewHolder.radioSexGroupS.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+
+                    @Override
+                    public void onCheckedChanged(RadioGroup group, int checkedId) {
+                        // find which radio button is selected
+                        if(checkedId == R.id.radioButton) {
+
+
+                            Toast.makeText(messageViewHolder.itemView.getContext(), "choice: Yes",
+                                    Toast.LENGTH_SHORT).show();
+                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countY").setValue(messages.getPollY() + 1);
+
+                            userMessagesList.remove(i);
+                            notifyDataSetChanged();
+                        } else if(checkedId == R.id.radioButton2) {
+
+                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countN").setValue(messages.getPollN() + 1);
+                            Toast.makeText(messageViewHolder.itemView.getContext(), "choice: No",
+                                    Toast.LENGTH_SHORT).show();
+                            userMessagesList.remove(i);
+                            notifyDataSetChanged();
+                        }
+                    }
+
+                });
+
+
+
+            }
+            else
+            {
+                messageViewHolder.pollIn.setVisibility(View.VISIBLE);
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
+                messageViewHolder.senderNameR.setText(messages.getName());
+
+                String oth = "Yes : "+messages.getPollY()+"No : "+messages.getPollN() +"  "+ messages.getTime() + " - " + messages.getDate();
+
+                messageViewHolder.pollCR.setText(oth);
+                messageViewHolder.pollTextR.setText(messages.getMessage());
+
+                messageViewHolder.radioSexGroupR.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+
+                    @Override
+                    public void onCheckedChanged(RadioGroup group, int checkedId) {
+                        // find which radio button is selected
+                        if(checkedId == R.id.radioButton) {
+
+                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countY").setValue(messages.getPollY() + 1);
+                            Toast.makeText(messageViewHolder.itemView.getContext(), currentGroupName+"choice: Yes"+msgKey,
+                                    Toast.LENGTH_SHORT).show();
+                            userMessagesList.remove(i);
+                            notifyDataSetChanged();
+                        } else if(checkedId == R.id.radioButton2) {
+                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countN").setValue(messages.getPollN() + 1);
+                            Toast.makeText(messageViewHolder.itemView.getContext(), "choice: No",
+                                    Toast.LENGTH_SHORT).show();
+                            userMessagesList.remove(i);
+                            notifyDataSetChanged();
+                        }
+                    }
+
+                });
+
+
+            }
 
 
         }
