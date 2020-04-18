@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="7dp"
+    android:layout_marginBottom="3dp"
+    >
+
+    <RelativeLayout
+        android:id="@+id/message_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="5dp">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="?android:attr/actionBarSize"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            >
+
+            <LinearLayout
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/sender_messages_layout"
+                >
+
+                <FrameLayout
+                    android:id="@+id/play_audio_lay"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginLeft="0dp"
+                    >
+
+                    <ImageView
+                        android:id="@+id/thumbnail_file_icon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentRight="true"
+                        android:layout_centerVertical="true"
+                        android:layout_gravity="center"
+                        android:layout_margin="5dp"
+                        />
+
+
+
+                </FrameLayout>
+
+
+
+            <TextView
+                android:id="@+id/sender_file_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_marginLeft="3dp"
+                android:layout_toEndOf="@+id/message_profile_image"
+                android:text="receiver messages here"
+                android:padding="10dp"
+                android:textSize="5sp"
+                android:textColorLink="#3671A8"
+                android:textColor="@android:color/black"
+                />
+
+
+            </LinearLayout>
+
+
+
+        </androidx.cardview.widget.CardView>
+
+    </RelativeLayout>
+</RelativeLayout>

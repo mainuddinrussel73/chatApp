@@ -47,6 +47,23 @@
             layout="@layout/audio_out"></include>
     </RelativeLayout>
 
+    <RelativeLayout
+        android:id="@+id/file_in"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="40dp"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/file_in"></include>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/file_out"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <include
+            layout="@layout/file_out"></include>
+    </RelativeLayout>
+
 
     <com.infinityandroid.roundedimageview.RoundedImageView
         android:id="@+id/message_sender_image_view"
@@ -130,11 +147,28 @@
     </TextView>
 
     <TextView
+        android:id="@+id/sender_file_seen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="0dp"
+        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:text="seen"
+        android:textSize="10sp"
+        android:padding="10dp"
+        android:layout_below="@+id/file_out"
+        android:textStyle="bold"
+        android:layout_marginRight="5dp"
+        android:textColor="#7a7b7d">
+
+    </TextView>
+
+    <TextView
         android:id="@+id/sender_img_seen"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="155dp"
+        android:layout_marginTop="150dp"
         android:layout_alignParentTop="@+id/receiver_message_text"
         android:text="seen"
         android:textSize="10sp"

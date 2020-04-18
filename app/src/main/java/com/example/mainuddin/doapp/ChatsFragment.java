@@ -106,15 +106,25 @@ public class ChatsFragment extends Fragment
 
                                                 if(messages.getType().equals("emoji")){
                                                     holder.last_msg.setText("\uD83D\uDC4D");
+                                                }else if(messages.getType().equals("image")){
+                                                    holder.last_msg.setText("\uD83C\uDF05");
+                                                }else if(messages.getType().equals("pdf") || messages.getType().equals("txt") || messages.getType().equals("pptx") ||
+                                                        messages.getType().equals("docx")){
+                                                    holder.last_msg.setText("\uD83D\uDCC3");
+                                                }else if(messages.getType().equals("mp3")){
+                                                    holder.last_msg.setText("\uD83C\uDFA4");
                                                 }
                                                 else{
-                                                    if(messages.isIsseen()){
+                                                    if(!messages.isIsseen()){
 
                                                         holder.last_msg.setText(LastMessage);
                                                         holder.last_msg.setTypeface(Typeface.DEFAULT_BOLD);
 
                                                     }else{
+
                                                         holder.last_msg.setText(LastMessage);
+                                                        holder.last_msg.setTypeface(Typeface.DEFAULT);
+
                                                     }
                                                 }
 
