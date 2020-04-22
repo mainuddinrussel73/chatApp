@@ -84,8 +84,8 @@
         <ImageButton
             android:id="@+id/send_message_btn"
             android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:src="@drawable/send_message"
+            android:layout_height="60dp"
+            android:src="@drawable/ic_send_black_24dp"
             android:layout_alignParentEnd="true"
             android:tint="@color/colorPrimary"
             android:backgroundTint="@android:color/transparent"

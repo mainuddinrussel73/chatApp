@@ -1,29 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
+    android:orientation="horizontal"
 
     android:padding="16dp">
 
     <TextView
+        android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="This is a BottomSheet"
+        android:layout_centerHorizontal="true"
+        android:text="Send Items"
         android:textSize="25sp" />
 
     <ImageButton
         android:id="@+id/button1"
         android:layout_width="60dp"
         android:layout_height="60dp"
-        android:background="@drawable/ic_poll_black_24dp"
-         />
+        android:layout_below="@+id/title"
+        android:layout_marginLeft="40dp"
+        android:background="@drawable/ic_poll_black_24dp" />
 
-    <Button
+    <ImageButton
         android:id="@+id/button2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="button 2" />
+        android:layout_below="@+id/title"
+        android:layout_toRightOf="@+id/button1"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/ic_location_on_black_24dp" />
 
-</LinearLayout>
+    <ImageButton
+        android:id="@+id/button3"
+        android:layout_below="@+id/title"
+        android:layout_toRightOf="@+id/button2"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/ic_fiber_smart_record_black_24dp" />
+
+</RelativeLayout>

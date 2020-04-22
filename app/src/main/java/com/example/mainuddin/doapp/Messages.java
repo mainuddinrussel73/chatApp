@@ -2,7 +2,34 @@ package com.example.mainuddin.doapp;
 
 public class Messages
 {
-    private String from, message, type, to, messageID, time, date, name;
+    private String from;
+    private String message;
+    private String type;
+    private String to;
+    private String messageID;
+    private String time;
+    private String date;
+    private String name;
+
+    public String getLat() {
+        return lat;
+    }
+
+    public void setLat(String lat) {
+        this.lat = lat;
+    }
+
+    private String lat;
+
+    public String getLon() {
+        return lon;
+    }
+
+    public void setLon(String lon) {
+        this.lon = lon;
+    }
+
+    private String lon;
 
     public boolean isIsseen() {
         return isseen;
@@ -19,7 +46,7 @@ public class Messages
 
     }
 
-    public Messages(String from, String message, String type, String to, String messageID, String time, String date, String name,boolean isseen) {
+    public Messages(String from, String message, String type, String to, String messageID, String time, String date, String name,boolean isseen,String lat,String lon) {
         this.from = from;
         this.message = message;
         this.type = type;
@@ -29,6 +56,8 @@ public class Messages
         this.date = date;
         this.name = name;
         this.isseen = isseen;
+        this.lat = lat;
+        this.lon = lon;
     }
 
     public String getFrom() {

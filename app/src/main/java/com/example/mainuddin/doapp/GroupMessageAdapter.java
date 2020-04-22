@@ -36,8 +36,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mainuddin.doapp.R;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -59,6 +61,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -313,6 +318,18 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
         }
         else if(fromMessageType.equals("poll")){
 
+            Calendar calForDate = Calendar.getInstance();
+            SimpleDateFormat currentDateFormat = new SimpleDateFormat("MMM dd, yyyy");
+            String  currentDate = currentDateFormat.format(calForDate.getTime());
+
+            Calendar calForTime = Calendar.getInstance();
+            SimpleDateFormat currentTimeFormat = new SimpleDateFormat("hh:mm a");
+            String  currentTime = currentTimeFormat.format(calForTime.getTime());
+
+            DatabaseReference GroupNameRef = FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName());
+
+            DatabaseReference GroupRef = FirebaseDatabase.getInstance().getReference().child("Groups");
+
             if (fromUserID.equals(messageSenderId))
             {
 
@@ -333,20 +350,70 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
                         // find which radio button is selected
                         if(checkedId == R.id.radioButton) {
 
+                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    String key = GroupNameRef.push().getKey();
+                                    HashMap<String, Object> groupMessageKey = new HashMap<>();
+                                    GroupNameRef.updateChildren(groupMessageKey);
 
-                            Toast.makeText(messageViewHolder.itemView.getContext(), "choice: Yes",
-                                    Toast.LENGTH_SHORT).show();
-                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countY").setValue(messages.getPollY() + 1);
+                                    DatabaseReference GroupMessageKeyRef = GroupNameRef.child(key);
+                                    HashMap<String, Object> messageInfoMap = new HashMap<>();
+                                    messageInfoMap.put("name", messages.getName());
+                                    messageInfoMap.put("message", messages.getMessage());
+                                    messageInfoMap.put("messageKey",key );
+                                    messageInfoMap.put("groupName",messages.getGroupName());
+                                    messageInfoMap.put("date", currentDate);
+                                    messageInfoMap.put("time", currentTime);
+                                    messageInfoMap.put("from",messages.getFrom());
+                                    messageInfoMap.put("countY", messages.getPollY() + 1);
+                                    messageInfoMap.put("countN", messages.getPollN());
+                                    messageInfoMap.put("type", "poll");
+                                    GroupMessageKeyRef.updateChildren(messageInfoMap);
 
-                            userMessagesList.remove(i);
-                            notifyDataSetChanged();
+                                    userMessagesList.remove(i);
+                                    notifyDataSetChanged();
+
+                                    Toast.makeText(messageViewHolder.itemView.getContext(), "choice: Yes",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+
+
+
                         } else if(checkedId == R.id.radioButton2) {
 
-                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countN").setValue(messages.getPollN() + 1);
-                            Toast.makeText(messageViewHolder.itemView.getContext(), "choice: No",
-                                    Toast.LENGTH_SHORT).show();
-                            userMessagesList.remove(i);
-                            notifyDataSetChanged();
+                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    String key = GroupNameRef.push().getKey();
+                                    HashMap<String, Object> groupMessageKey = new HashMap<>();
+                                    GroupNameRef.updateChildren(groupMessageKey);
+
+                                    DatabaseReference GroupMessageKeyRef = GroupNameRef.child(key);
+                                    HashMap<String, Object> messageInfoMap = new HashMap<>();
+                                    messageInfoMap.put("name", messages.getName());
+                                    messageInfoMap.put("message", messages.getMessage());
+                                    messageInfoMap.put("messageKey", key);
+                                    messageInfoMap.put("groupName",messages.getGroupName());
+                                    messageInfoMap.put("date", currentDate);
+                                    messageInfoMap.put("time", currentTime);
+                                    messageInfoMap.put("from",messages.getFrom());
+                                    messageInfoMap.put("countY", messages.getPollY());
+                                    messageInfoMap.put("countN", messages.getPollN() + 1);
+                                    messageInfoMap.put("type", "poll");
+                                    GroupMessageKeyRef.updateChildren(messageInfoMap);
+
+                                    userMessagesList.remove(i);
+                                    notifyDataSetChanged();
+
+                                    Toast.makeText(messageViewHolder.itemView.getContext(), "choice: No",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+
                         }
                     }
 
@@ -372,18 +439,60 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
                     public void onCheckedChanged(RadioGroup group, int checkedId) {
                         // find which radio button is selected
                         if(checkedId == R.id.radioButton) {
+                            String key = GroupNameRef.push().getKey();
+                            GroupNameRef.child(messages.getMessageKey()).removeValue();
 
-                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countY").setValue(messages.getPollY() + 1);
+                            HashMap<String, Object> groupMessageKey = new HashMap<>();
+                            GroupNameRef.updateChildren(groupMessageKey);
+
+                            DatabaseReference GroupMessageKeyRef = GroupNameRef.child(key);
+                            HashMap<String, Object> messageInfoMap = new HashMap<>();
+                            messageInfoMap.put("name", messages.getName());
+                            messageInfoMap.put("message", messages.getMessage());
+                            messageInfoMap.put("messageKey", key);
+                            messageInfoMap.put("groupName",messages.getGroupName());
+                            messageInfoMap.put("date", currentDate);
+                            messageInfoMap.put("time", currentTime);
+                            messageInfoMap.put("from",messages.getFrom());
+                            messageInfoMap.put("countY", messages.getPollY() + 1);
+                            messageInfoMap.put("countN", messages.getPollN());
+                            messageInfoMap.put("type", "poll");
+                            GroupMessageKeyRef.updateChildren(messageInfoMap);
+
+                            userMessagesList.remove(i);
+                            notifyDataSetChanged();
+
                             Toast.makeText(messageViewHolder.itemView.getContext(), currentGroupName+"choice: Yes"+msgKey,
                                     Toast.LENGTH_SHORT).show();
+
+
+                        } else if(checkedId == R.id.radioButton2) {
+                            String key = GroupNameRef.push().getKey();
+                            GroupNameRef.child(messages.getMessageKey()).removeValue();
+
+                            HashMap<String, Object> groupMessageKey = new HashMap<>();
+                            GroupNameRef.updateChildren(groupMessageKey);
+
+                            DatabaseReference GroupMessageKeyRef = GroupNameRef.child(key);
+                            HashMap<String, Object> messageInfoMap = new HashMap<>();
+                            messageInfoMap.put("name", messages.getName());
+                            messageInfoMap.put("message", messages.getMessage());
+                            messageInfoMap.put("messageKey", key);
+                            messageInfoMap.put("groupName",messages.getGroupName());
+                            messageInfoMap.put("date", currentDate);
+                            messageInfoMap.put("time", currentTime);
+                            messageInfoMap.put("from",messages.getFrom());
+                            messageInfoMap.put("countY", messages.getPollY());
+                            messageInfoMap.put("countN", messages.getPollN() + 1);
+                            messageInfoMap.put("type", "poll");
+                            GroupMessageKeyRef.updateChildren(messageInfoMap);
+
                             userMessagesList.remove(i);
                             notifyDataSetChanged();
-                        } else if(checkedId == R.id.radioButton2) {
-                            FirebaseDatabase.getInstance().getReference().child("Groups").child(messages.getGroupName()).child(messages.getMessageKey()).child("countN").setValue(messages.getPollN() + 1);
+
                             Toast.makeText(messageViewHolder.itemView.getContext(), "choice: No",
                                     Toast.LENGTH_SHORT).show();
-                            userMessagesList.remove(i);
-                            notifyDataSetChanged();
+
                         }
                     }
 
@@ -393,6 +502,15 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
             }
 
 
+        }
+        else if(fromMessageType.equals("emoji")){
+
+            if(fromUserID.equals(messageSenderId)){
+                messageViewHolder.likeS.setVisibility(View.VISIBLE);
+            }else{
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
+                messageViewHolder.likeR.setVisibility(View.VISIBLE);
+            }
         }
 
 

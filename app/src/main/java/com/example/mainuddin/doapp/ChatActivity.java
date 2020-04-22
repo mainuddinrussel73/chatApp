@@ -1,5 +1,64 @@
 package com.example.mainuddin.doapp;
 
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaRecorder;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.StorageTask;
+import com.google.firebase.storage.UploadTask;
+import com.shivtechs.maplocationpicker.LocationPickerActivity;
+import com.shivtechs.maplocationpicker.MapUtility;
+import com.sinch.android.rtc.PushPair;
+import com.sinch.android.rtc.Sinch;
+import com.sinch.android.rtc.SinchClient;
+import com.sinch.android.rtc.calling.Call;
+import com.sinch.android.rtc.calling.CallClient;
+import com.sinch.android.rtc.calling.CallClientListener;
+import com.sinch.android.rtc.calling.CallListener;
+import com.squareup.picasso.Picasso;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
@@ -10,66 +69,6 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import de.hdodenhof.circleimageview.CircleImageView;
-
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.media.AudioManager;
-import android.net.Uri;
-import android.os.Bundle;
-import android.provider.ContactsContract;
-import android.text.Editable;
-import android.text.TextUtils;
-import android.text.TextWatcher;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import com.example.mainuddin.doapp.Notification.Client;
-import com.example.mainuddin.doapp.Notification.Data;
-import com.example.mainuddin.doapp.Notification.MyResponse;
-import com.example.mainuddin.doapp.Notification.Sender;
-import com.example.mainuddin.doapp.Notification.Token;
-import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.OnProgressListener;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.StorageTask;
-import com.google.firebase.storage.UploadTask;
-import com.sinch.android.rtc.ClientRegistration;
-import com.sinch.android.rtc.PushPair;
-import com.sinch.android.rtc.Sinch;
-import com.sinch.android.rtc.SinchClient;
-import com.sinch.android.rtc.SinchClientListener;
-import com.sinch.android.rtc.SinchError;
-import com.sinch.android.rtc.calling.Call;
-import com.sinch.android.rtc.calling.CallClient;
-import com.sinch.android.rtc.calling.CallClientListener;
-import com.sinch.android.rtc.calling.CallListener;
-import com.squareup.picasso.Picasso;
-
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity implements ExampleBottomSheetDialog.BottomSheetListener
 {
@@ -100,7 +99,6 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
     ValueEventListener seenListener;
 
-    APIService apiService;
     boolean notify = false;
 
     boolean update = false;
@@ -110,6 +108,17 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
     SinchClient sinchClient;
     AlertDialog.Builder builder,builder1;
 
+    private static final int ADDRESS_PICKER_REQUEST = 1020;
+
+    private static final String AUDIO_RECORDER_FILE_EXT_3GP = ".3gp";
+    private static final String AUDIO_RECORDER_FILE_EXT_MP4 = ".mp4";
+    private static final String AUDIO_RECORDER_FOLDER = "AudioRecorder";
+    private MediaRecorder recorder = null;
+    private int currentFormat = 0;
+    private int output_formats[] = { MediaRecorder.OutputFormat.MPEG_4,             MediaRecorder.OutputFormat.THREE_GPP };
+    private String file_exts[] = { AUDIO_RECORDER_FILE_EXT_MP4, AUDIO_RECORDER_FILE_EXT_3GP };
+
+    String fileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -117,7 +126,6 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        apiService = Client.getClient("http://fcm.googleapis.com/").create(APIService.class);
 
         mAuth = FirebaseAuth.getInstance();
         messageSenderID = mAuth.getCurrentUser().getUid();
@@ -290,6 +298,7 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
 
 
+
         // Instantiate a SinchClient using the SinchClientBuilder.
         android.content.Context context = this.getApplicationContext();
         sinchClient = Sinch.getSinchClientBuilder()
@@ -346,8 +355,125 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
     }
 
+    private String getFilename(){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,AUDIO_RECORDER_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+
+        fileName = file.getAbsolutePath() + "/" + System.currentTimeMillis() + file_exts[currentFormat];
+        return (fileName);
+    }
+
+    private void startRecording(){
+        recorder = new MediaRecorder();
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(output_formats[currentFormat]);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        recorder.setOutputFile(getFilename());
+        recorder.setOnErrorListener(errorListener);
+        recorder.setOnInfoListener(infoListener);
+
+        try {
+            recorder.prepare();
+            recorder.start();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private MediaRecorder.OnErrorListener errorListener = new MediaRecorder.OnErrorListener() {
+        @Override
+        public void onError(MediaRecorder mr, int what, int extra) {
+            AppLog.logString("Error: " + what + ", " + extra);
+        }
+    };
+
+    private MediaRecorder.OnInfoListener infoListener = new MediaRecorder.OnInfoListener() {
+        @Override
+        public void onInfo(MediaRecorder mr, int what, int extra) {
+            AppLog.logString("Warning: " + what + ", " + extra);
+        }
+    };
+
+    private void stopRecording(){
+        if(null != recorder){
+            recorder.stop();
+            recorder.reset();
+            recorder.release();
+
+            recorder = null;
+        }
+    }
+
     @Override
     public void onButtonClicked(String text) {
+
+        if(text.equals("location")){
+            locationPlacesIntent();
+        }else if(text.equals("audio")){
+
+            LayoutInflater layoutInflaterAndroid = LayoutInflater.from(ChatActivity.this);
+            View mView = layoutInflaterAndroid.inflate(R.layout.options_r, null);
+            AlertDialog.Builder alertDialogBuilderUserInput = new AlertDialog.Builder(ChatActivity.this,R.style.RoundedDialog);
+            alertDialogBuilderUserInput.setView(mView);
+
+            final Button button = (Button) mView.findViewById(R.id.button1);
+
+            button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    // TODO Auto-generated method stub
+                    switch(event.getAction()){
+                        case MotionEvent.ACTION_DOWN:
+                            AppLog.logString("Start Recording");
+                            button.setText("Recording..");
+                            button.setBackgroundColor(ContextCompat.getColor(ChatActivity.this,R.color.mapbox_plugins_green));
+                            startRecording();
+                            return true;
+                        case MotionEvent.ACTION_UP:
+                            AppLog.logString("stop Recording");
+                            button.setText("Stopped");
+                            button.setBackgroundColor(ContextCompat.getColor(ChatActivity.this,R.color.design_default_color_error));
+                            stopRecording();
+
+
+
+
+                            break;
+                    }
+                    return false;
+                }
+            });
+
+            alertDialogBuilderUserInput.setCancelable(false)
+                    .setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialogBox, int id) {
+                            // ToDo get user input here
+                            SendAudio(Uri.fromFile(new File(fileName)));
+                        }
+                    })
+
+                    .setNegativeButton("Cancel",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialogBox, int id) {
+                                    dialogBox.cancel();
+                                }
+                            });
+
+
+
+            AlertDialog alertDialogAndroid = alertDialogBuilderUserInput.create();
+            alertDialogAndroid.show();
+
+
+
+
+        }
 
     }
 
@@ -469,7 +595,7 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         userMessagesList.setAdapter(messageAdapter);
 
 
-        loadingBar = new ProgressDialog(this);
+        loadingBar = new ProgressDialog(this,R.style.RoundedDialog);
 
         Calendar calendar = Calendar.getInstance();
 
@@ -480,6 +606,15 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         saveCurrentTime = currentTime.format(calendar.getTime());
     }
 
+    private void locationPlacesIntent(){
+
+
+        MapUtility.apiKey = getResources().getString(R.string.map_api_key);
+        Intent i = new Intent(ChatActivity.this, LocationPickerActivity.class);
+        startActivityForResult(i, ADDRESS_PICKER_REQUEST);
+
+
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -507,29 +642,45 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
                 final StorageReference filePath = storageReference.child(messagePushID+"."+checker);
 
-                filePath.putFile(fileUri).addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                final UploadTask uploadTask = filePath.putFile(fileUri);
+
+                uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
-                    public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                        if(task.isSuccessful()){
-                            Map messageTextBody = new HashMap();
-                            messageTextBody.put("message", task.getResult().getDownloadUrl().toString());
-                            messageTextBody.put("name", fileUri.getLastPathSegment());
-                            messageTextBody.put("type", checker);
-                            messageTextBody.put("from", messageSenderID);
-                            messageTextBody.put("to", messageReceiverID);
-                            messageTextBody.put("messageID", messagePushID);
-                            messageTextBody.put("time", saveCurrentTime);
-                            messageTextBody.put("date", saveCurrentDate);
-                            messageTextBody.put("isseen", false);
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        taskSnapshot.getStorage().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                String download_url = uri.toString();
+                                Map messageTextBody = new HashMap();
+                                messageTextBody.put("message", download_url);
+                                messageTextBody.put("name", fileUri.getLastPathSegment());
+                                messageTextBody.put("lat", "0");
+                                messageTextBody.put("lon", "0");
+                                messageTextBody.put("type", checker);
+                                messageTextBody.put("from", messageSenderID);
+                                messageTextBody.put("to", messageReceiverID);
+                                messageTextBody.put("messageID", messagePushID);
+                                messageTextBody.put("time", saveCurrentTime);
+                                messageTextBody.put("date", saveCurrentDate);
+                                messageTextBody.put("isseen", false);
 
-                            Map messageBodyDetails = new HashMap();
-                            messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
-                            messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
+                                Map messageBodyDetails = new HashMap();
+                                messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+                                messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
 
-                            RootRef.updateChildren(messageBodyDetails);
-                            loadingBar.dismiss();
-                        }
+                                RootRef.updateChildren(messageBodyDetails);
+                                loadingBar.dismiss();
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                loadingBar.dismiss();
+                                Toast.makeText(ChatActivity.this,e.getMessage(),Toast.LENGTH_LONG);
+                            }
+                        });
                     }
+
+
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
@@ -559,66 +710,59 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
                 final StorageReference filePath = storageReference.child(messagePushID+"."+"jpg");
 
+
                 uploadTask = filePath.putFile(fileUri);
-                uploadTask.continueWith(new Continuation<UploadTask.TaskSnapshot, Uri>() {
+                uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
-                    public Uri then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                        if(!task.isSuccessful()){
-                            throw task.getException();
-                        }
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        taskSnapshot.getStorage().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                myurl = uri.toString();
+                                Map messageTextBody = new HashMap();
+                                messageTextBody.put("message", myurl);
+                                messageTextBody.put("name", fileUri.getLastPathSegment());
+                                messageTextBody.put("lat", "0");
+                                messageTextBody.put("lon", "0");
+                                messageTextBody.put("type", checker);
+                                messageTextBody.put("from", messageSenderID);
+                                messageTextBody.put("to", messageReceiverID);
+                                messageTextBody.put("messageID", messagePushID);
+                                messageTextBody.put("time", saveCurrentTime);
+                                messageTextBody.put("date", saveCurrentDate);
+                                messageTextBody.put("isseen", false);
 
-                        return (task.getResult().getDownloadUrl());
+                                Map messageBodyDetails = new HashMap();
+                                messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+                                messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+                                RootRef.updateChildren(messageBodyDetails);
+                                loadingBar.dismiss();
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                loadingBar.dismiss();
+                                Toast.makeText(ChatActivity.this,e.getMessage(),Toast.LENGTH_LONG);
+                            }
+                        });
                     }
-                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+
+
+                }).addOnFailureListener(new OnFailureListener() {
                     @Override
-                    public void onComplete(@NonNull Task<Uri> task) {
-                        if(task.isSuccessful())
-                        {
-
-
-                            myurl =task.getResult().toString();
-
-                            Map messageTextBody = new HashMap();
-                            messageTextBody.put("message", myurl);
-                            messageTextBody.put("name", fileUri.getLastPathSegment());
-                            messageTextBody.put("type", checker);
-                            messageTextBody.put("from", messageSenderID);
-                            messageTextBody.put("to", messageReceiverID);
-                            messageTextBody.put("messageID", messagePushID);
-                            messageTextBody.put("time", saveCurrentTime);
-                            messageTextBody.put("date", saveCurrentDate);
-                            messageTextBody.put("isseen", false);
-
-                            Map messageBodyDetails = new HashMap();
-                            messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
-                            messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
-
-                            RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
-                                @Override
-                                public void onComplete(@NonNull Task task)
-                                {
-                                    if (task.isSuccessful())
-                                    {
-                                        loadingBar.dismiss();
-                                        Toast.makeText(ChatActivity.this, "Message Sent Successfully...", Toast.LENGTH_SHORT).show();
-                                    }
-                                    else
-                                    {
-                                        loadingBar.dismiss();
-                                        Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
-                                    }
-                                    MessageInputText.setText("");
-                                }
-                            });
-
-
-
-                        }
-                        else{
-
-                        }
+                    public void onFailure(@NonNull Exception e) {
+                        loadingBar.dismiss();
+                        Toast.makeText(ChatActivity.this,e.getMessage(),Toast.LENGTH_LONG);
+                    }
+                }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                        double d = (100.0*taskSnapshot.getBytesTransferred())/taskSnapshot.getTotalByteCount();
+                        loadingBar.setMessage((int)d+"% Uploading...");
                     }
                 });
+
 
 
             }
@@ -626,6 +770,28 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
                 loadingBar.dismiss();
                 Toast.makeText(ChatActivity.this,"Nothing Selected.",Toast.LENGTH_LONG);
             }
+        }
+
+        else if(requestCode==ADDRESS_PICKER_REQUEST ){
+
+            if( resultCode == RESULT_OK)
+            {
+
+                try {
+                    if (data != null && data.getStringExtra(MapUtility.ADDRESS) != null) {
+                        String address = data.getStringExtra(MapUtility.ADDRESS);
+                        String currentLatitude = Double.toString(data.getDoubleExtra(MapUtility.LATITUDE, 0.0));
+                        String currentLongitude = Double.toString(data.getDoubleExtra(MapUtility.LONGITUDE, 0.0));
+
+                        SendLocation(new MapModel(currentLatitude,currentLongitude),address);
+
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+
+            }
+
         }
     }
 
@@ -728,11 +894,16 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         //updateUserStatus("offline");
 
     }
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
 
     @Override
     protected void onStart()
     {
         super.onStart();
+
 
         messagesList.clear();
 
@@ -848,6 +1019,116 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
     }
 
+    private void SendLocation(MapModel mapModel,CharSequence address){
+        final String messageSenderRef = "Messages/" + messageSenderID + "/" + messageReceiverID;
+        final String messageReceiverRef = "Messages/" + messageReceiverID + "/" + messageSenderID;
+
+        DatabaseReference userMessageKeyRef = RootRef.child("Messages")
+                .child(messageSenderID).child(messageReceiverID).push();
+
+        final  String messagePushID = userMessageKeyRef.getKey();
+
+
+        Map messageTextBody = new HashMap();
+        messageTextBody.put("message", address.toString());
+        messageTextBody.put("name", "location");
+        messageTextBody.put("lat", mapModel.getLatitude());
+        messageTextBody.put("lon", mapModel.getLongitude());
+        messageTextBody.put("type", "location");
+        messageTextBody.put("from", messageSenderID);
+        messageTextBody.put("to", messageReceiverID);
+        messageTextBody.put("messageID", messagePushID);
+        messageTextBody.put("time", saveCurrentTime);
+        messageTextBody.put("date", saveCurrentDate);
+        messageTextBody.put("isseen", false);
+
+        Map messageBodyDetails = new HashMap();
+        messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+        messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+        RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
+            @Override
+            public void onComplete(@NonNull Task task)
+            {
+                if (task.isSuccessful())
+                {
+                    Toast.makeText(ChatActivity.this, "Message Sent Successfully...", Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void SendAudio(Uri audioUri){
+        StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Document Files");
+
+        final String messageSenderRef = "Messages/" + messageSenderID + "/" + messageReceiverID;
+        final String messageReceiverRef = "Messages/" + messageReceiverID + "/" + messageSenderID;
+
+        DatabaseReference userMessageKeyRef = RootRef.child("Messages")
+                .child(messageSenderID).child(messageReceiverID).push();
+
+        final  String messagePushID = userMessageKeyRef.getKey();
+
+        final StorageReference filePath = storageReference.child(messagePushID+"."+checker);
+
+        final UploadTask uploadTask = filePath.putFile(audioUri);
+
+        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                taskSnapshot.getStorage().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        String download_url = uri.toString();
+                        Map messageTextBody = new HashMap();
+                        messageTextBody.put("message", download_url);
+                        messageTextBody.put("name", audioUri.getLastPathSegment());
+                        messageTextBody.put("lat", "0");
+                        messageTextBody.put("lon", "0");
+                        messageTextBody.put("type", "mp3");
+                        messageTextBody.put("from", messageSenderID);
+                        messageTextBody.put("to", messageReceiverID);
+                        messageTextBody.put("messageID", messagePushID);
+                        messageTextBody.put("time", saveCurrentTime);
+                        messageTextBody.put("date", saveCurrentDate);
+                        messageTextBody.put("isseen", false);
+
+                        Map messageBodyDetails = new HashMap();
+                        messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+                        messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+                        RootRef.updateChildren(messageBodyDetails);
+                        loadingBar.dismiss();
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        loadingBar.dismiss();
+                        Toast.makeText(ChatActivity.this,e.getMessage(),Toast.LENGTH_LONG);
+                    }
+                });
+            }
+
+
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                loadingBar.dismiss();
+                Toast.makeText(ChatActivity.this,e.getMessage(),Toast.LENGTH_LONG);
+            }
+        }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                double d = (100.0*taskSnapshot.getBytesTransferred())/taskSnapshot.getTotalByteCount();
+                loadingBar.setMessage((int)d+"% Uploading...");
+            }
+        });
+    }
+
 
     private void SendLike()
     {
@@ -864,6 +1145,8 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
                     Map messageTextBody = new HashMap();
                     messageTextBody.put("message", "");
                     messageTextBody.put("name", "like");
+                    messageTextBody.put("lat", "0");
+                    messageTextBody.put("lon", "0");
                     messageTextBody.put("type", "emoji");
                     messageTextBody.put("from", messageSenderID);
                     messageTextBody.put("to", messageReceiverID);
@@ -918,6 +1201,9 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
             Map messageTextBody = new HashMap();
             messageTextBody.put("message", messageText);
             messageTextBody.put("type", "text");
+            messageTextBody.put("name", "text");
+            messageTextBody.put("lat", "0");
+            messageTextBody.put("lon", "0");
             messageTextBody.put("from", messageSenderID);
             messageTextBody.put("to", messageReceiverID);
             messageTextBody.put("messageID", messagePushID);

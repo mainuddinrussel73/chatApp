@@ -2,12 +2,17 @@ package com.example.mainuddin.doapp;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputType;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,6 +31,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,7 +49,7 @@ import androidx.recyclerview.widget.RecyclerView;
 public class GroupChatActivity extends AppCompatActivity implements ExampleBottomSheetDialog.BottomSheetListener
 {
     private Toolbar mToolbar;
-    private ImageButton SendMessageButton;
+    private ImageButton SendMessageButton,SendLikeButton;
     private EditText userMessageInput;
 
     private FirebaseAuth mAuth;
@@ -53,7 +59,7 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
     private final List<GroupMessage> messagesList = new ArrayList<>();
     private LinearLayoutManager linearLayoutManager;
     private GroupMessageAdapter messageAdapter;
-    private RecyclerView userMessagesList;
+    public static RecyclerView userMessagesList;
     private DatabaseReference GroupRef;
     public static  String msgKey;
 
@@ -82,7 +88,32 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
 
 
         GetUserInfo();
+        SendMessageButton.setVisibility(View.GONE);
+        SendLikeButton.setVisibility(View.VISIBLE);
 
+
+        userMessageInput.addTextChangedListener(new TextWatcher() {
+
+            public void afterTextChanged(Editable s) {
+                if(!userMessageInput.getText().toString().equals("")){
+                    System.out.println("kl");
+                    SendMessageButton.setVisibility(View.VISIBLE);
+                    SendLikeButton.setVisibility(View.GONE);
+                }else{
+                    SendMessageButton.setVisibility(View.GONE);
+                    SendLikeButton.setVisibility(View.VISIBLE);
+                }
+            }
+
+            public void beforeTextChanged(CharSequence s, int start,
+                                          int count, int after) {
+            }
+
+            public void onTextChanged(CharSequence s, int start,
+                                      int before, int count) {
+
+            }
+        });
 
         SendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -95,7 +126,14 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
             }
         });
 
-        ImageButton buttonOpenBottomSheet = findViewById(R.id.send_options_btn);
+        SendLikeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SaveLikeInfoToDatabase();
+            }
+        });
+
+        ImageButton buttonOpenBottomSheet = findViewById(R.id.send_options_button);
         buttonOpenBottomSheet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -296,7 +334,8 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
         getSupportActionBar().setTitle(currentGroupName);
 
         SendMessageButton = (ImageButton) findViewById(R.id.send_message_button);
-        userMessageInput = (EditText) findViewById(R.id.input_group_message);
+        SendLikeButton = findViewById(R.id.send_like_button);
+        userMessageInput = (EditText) findViewById(R.id.input_message);
 
         messageAdapter = new GroupMessageAdapter(messagesList);
         userMessagesList = (RecyclerView) findViewById(R.id.group_messages_list_of_users);
@@ -372,6 +411,43 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
         }
     }
 
+    private void SaveLikeInfoToDatabase()
+    {
+        String message = userMessageInput.getText().toString();
+        String messagekEY = GroupNameRef.push().getKey();
+        msgKey = messagekEY;
+
+
+        {
+            Calendar calForDate = Calendar.getInstance();
+            SimpleDateFormat currentDateFormat = new SimpleDateFormat("MMM dd, yyyy");
+            currentDate = currentDateFormat.format(calForDate.getTime());
+
+            Calendar calForTime = Calendar.getInstance();
+            SimpleDateFormat currentTimeFormat = new SimpleDateFormat("hh:mm a");
+            currentTime = currentTimeFormat.format(calForTime.getTime());
+
+
+            HashMap<String, Object> groupMessageKey = new HashMap<>();
+            GroupNameRef.updateChildren(groupMessageKey);
+
+            GroupMessageKeyRef = GroupNameRef.child(messagekEY);
+
+            HashMap<String, Object> messageInfoMap = new HashMap<>();
+            messageInfoMap.put("name", "like");
+            messageInfoMap.put("message", "");
+            messageInfoMap.put("messageKey", messagekEY);
+            messageInfoMap.put("groupName",currentGroupName);
+            messageInfoMap.put("date", currentDate);
+            messageInfoMap.put("time", currentTime);
+            messageInfoMap.put("from",currentUserID);
+            messageInfoMap.put("countY", 0);
+            messageInfoMap.put("countN", 0);
+            messageInfoMap.put("type", "emoji");
+            GroupMessageKeyRef.updateChildren(messageInfoMap);
+        }
+    }
+
 
 
     private void DisplayMessages(DataSnapshot dataSnapshot)
@@ -412,16 +488,15 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
         userMessagesList.smoothScrollToPosition(userMessagesList.getAdapter().getItemCount());
 
     }
-    private void SendPoll()
+    private void SendPoll(String text)
     {
 
-        String message = userMessageInput.getText().toString();
         String messagekEY = GroupNameRef.push().getKey();
         msgKey = messagekEY;
 
-        if (TextUtils.isEmpty(message))
+        if (TextUtils.isEmpty(text))
         {
-            Toast.makeText(this, "Please write message first...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please write topic first...", Toast.LENGTH_SHORT).show();
         }
         else {
 
@@ -442,7 +517,7 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
 
             HashMap<String, Object> messageInfoMap = new HashMap<>();
             messageInfoMap.put("name", currentUserName);
-            messageInfoMap.put("message", message);
+            messageInfoMap.put("message", text);
             messageInfoMap.put("messageKey", messagekEY);
             messageInfoMap.put("groupName",currentGroupName);
             messageInfoMap.put("date", currentDate);
@@ -464,7 +539,37 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
     public void onButtonClicked(String text) {
 
         if(text.equals("poll")){
-            SendPoll();
+
+            LayoutInflater layoutInflaterAndroid = LayoutInflater.from(GroupChatActivity.this);
+            View mView = layoutInflaterAndroid.inflate(R.layout.options, null);
+            AlertDialog.Builder alertDialogBuilderUserInput = new AlertDialog.Builder(GroupChatActivity.this,R.style.RoundedDialog);
+            alertDialogBuilderUserInput.setView(mView);
+
+            final EditText userInputDialogEditText = (EditText) mView.findViewById(R.id.userInputDialog);
+            alertDialogBuilderUserInput
+                    .setCancelable(false)
+                    .setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialogBox, int id) {
+                            // ToDo get user input here
+                            System.out.println(userInputDialogEditText.getText().toString());
+                            SendPoll(userInputDialogEditText.getText().toString());
+                            userMessageInput.setText("");
+                        }
+                    })
+
+                    .setNegativeButton("Cancel",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialogBox, int id) {
+                                    dialogBox.cancel();
+                                }
+                            });
+
+            AlertDialog alertDialogAndroid = alertDialogBuilderUserInput.create();
+            alertDialogAndroid.show();
+
+
+
+
         }
 
     }

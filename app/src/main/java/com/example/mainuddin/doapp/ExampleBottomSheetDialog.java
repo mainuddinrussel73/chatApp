@@ -21,7 +21,9 @@ public class ExampleBottomSheetDialog extends BottomSheetDialogFragment {
         View v = inflater.inflate(R.layout.bottom_sheet_layout, container, false);
 
         ImageButton button1 = v.findViewById(R.id.button1);
-        Button button2 = v.findViewById(R.id.button2);
+        ImageButton button2 = v.findViewById(R.id.button2);
+        ImageButton button3 = v.findViewById(R.id.button3);
+
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -37,7 +39,14 @@ public class ExampleBottomSheetDialog extends BottomSheetDialogFragment {
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mListener.onButtonClicked("Button 2 clicked");
+                mListener.onButtonClicked("location");
+                dismiss();
+            }
+        });
+        button3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mListener.onButtonClicked("audio");
                 dismiss();
             }
         });

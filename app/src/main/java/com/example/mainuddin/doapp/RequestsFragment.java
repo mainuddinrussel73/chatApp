@@ -130,7 +130,7 @@ public class RequestsFragment extends Fragment
                                                                         "Cancel"
                                                                 };
 
-                                                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(),R.style.RoundedDialog);
                                                         builder.setTitle(requestUserName  + "  Chat Request");
 
                                                         builder.setItems(options, new DialogInterface.OnClickListener() {
@@ -257,7 +257,7 @@ public class RequestsFragment extends Fragment
                                                                         "Cancel Chat Request"
                                                                 };
 
-                                                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(),R.style.RoundedDialog);
                                                         builder.setTitle("Already Sent Request");
 
                                                         builder.setItems(options, new DialogInterface.OnClickListener() {

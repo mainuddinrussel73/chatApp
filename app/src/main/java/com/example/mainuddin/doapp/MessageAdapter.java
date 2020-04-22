@@ -1,10 +1,15 @@
 package com.example.mainuddin.doapp;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -23,6 +28,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -51,6 +57,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -64,6 +72,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import de.hdodenhof.circleimageview.CircleImageView;
 
+import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 import static android.text.Spanned.SPAN_INCLUSIVE_INCLUSIVE;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder>
@@ -87,15 +96,16 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         public TextView senderMessageText, receiverMessageText;
         public CircleImageView receiverProfileImage;
         public RoundedImageView messageSenderPicture, messageReceiverPicture,likeS,likeR;
-        public RelativeLayout audioIn,audioOut;
+        public RelativeLayout audioIn,audioOut,mapIn,mapOut;
         public RelativeLayout fileIn,fileOut;
         TextView dateS,dateR;
         ImageButton playS,playR;
         SeekBar seekS,seekR;
         TextView audioTS,audioTR;
-        TextView sender_seen,sender_img_seen,sender_m_seen,sender_file_seen;
+        TextView sender_seen,sender_img_seen,sender_m_seen,sender_file_seen,sender_loc_seen;
         ImageView fileS,fileR;
-        TextView fileST,fileRT;
+        RoundedImageView mapS,mapR;
+        TextView fileST,fileRT,locS,locR,timeS,timeR;
 
 
 
@@ -110,6 +120,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             messageSenderPicture = itemView.findViewById(R.id.message_sender_image_view);
             audioIn = itemView.findViewById(R.id.audio_in);
             audioOut = itemView.findViewById(R.id.audio_out);
+
+            mapIn = itemView.findViewById(R.id.map_in);
+            mapOut = itemView.findViewById(R.id.map_out);
 
             fileIn = itemView.findViewById(R.id.file_in);
             fileOut = itemView.findViewById(R.id.file_out);
@@ -129,6 +142,15 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             fileS = fileOut.findViewById(R.id.thumbnail_file_icon);
             fileR = fileIn.findViewById(R.id.thumbnail_file_icon);
 
+            locS = mapOut.findViewById(R.id.location);
+            locR = mapIn.findViewById(R.id.location);
+
+            mapS = mapOut.findViewById(R.id.map);
+            mapR = mapIn.findViewById(R.id.map);
+
+            timeS = mapOut.findViewById(R.id.time);
+            timeR = mapIn.findViewById(R.id.time);
+
             fileST = fileOut.findViewById(R.id.sender_file_text);
             fileRT = fileIn.findViewById(R.id.receiver_file_text);
 
@@ -136,6 +158,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             sender_img_seen = itemView.findViewById(R.id.sender_img_seen);
             sender_m_seen = itemView.findViewById(R.id.sender_m_seen);
             sender_file_seen = itemView.findViewById(R.id.sender_file_seen);
+            sender_loc_seen = itemView.findViewById(R.id.sender_loc_seen);
 
             likeS = itemView.findViewById(R.id.message_sender_like_view);
             likeR = itemView.findViewById(R.id.message_receiver_like_view);
@@ -201,6 +224,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         messageViewHolder.messageReceiverPicture.setVisibility(View.GONE);
         messageViewHolder.audioIn.setVisibility(View.GONE);
         messageViewHolder.audioOut.setVisibility(View.GONE);
+        messageViewHolder.mapIn.setVisibility(View.GONE);
+        messageViewHolder.mapOut.setVisibility(View.GONE);
         messageViewHolder.fileIn.setVisibility(View.GONE);
         messageViewHolder.fileOut.setVisibility(View.GONE);
         messageViewHolder.likeS.setVisibility(View.GONE);
@@ -209,6 +234,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         messageViewHolder.sender_img_seen.setVisibility(View.GONE);
         messageViewHolder.sender_m_seen.setVisibility(View.GONE);
         messageViewHolder.sender_file_seen.setVisibility(View.GONE);
+        messageViewHolder.sender_loc_seen.setVisibility(View.GONE);
 
 
         if (fromMessageType.equals("text")) {
@@ -301,6 +327,68 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
             }
         }
+        else if(fromMessageType.equals("location")){
+            if(fromUserID.equals(messageSenderId))
+            {
+
+                messageViewHolder.sender_loc_seen.setVisibility(View.VISIBLE);
+                if(messages.isIsseen() )
+                {
+                    messageViewHolder.sender_loc_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_loc_seen.setText("Delivered");
+                }
+
+
+                messageViewHolder.mapOut.setVisibility(View.VISIBLE);
+                String URL = "https://api.mapbox.com/styles/v1/mapbox/streets-v10/static/pin-m(" + messages.getLon() +","+messages.getLat() +")/" + messages.getLon()+","+messages.getLat()+",15/400x300?access_token=pk.eyJ1IjoibWFpbnU3MyIsImEiOiJjazlhNGtqMmEwNDN1M25udnAyNjZ5dXJkIn0.ZRZ1T8LVImkeXmieZDYqUg";
+                Picasso.get().load(URL).into(messageViewHolder.mapS);
+                System.out.println(URL);
+                //messageViewHolder.mapS.setImageBitmap(getBitmapFromURL(URL));
+
+                messageViewHolder.locS.setText(messages.getMessage());
+
+                SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
+                ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE);
+                messageViewHolder.timeS.setText(ss2);
+
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                    }
+                });
+
+
+            }else
+            {
+
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
+
+                messageViewHolder.mapIn.setVisibility(View.VISIBLE);
+                String URL = "https://api.mapbox.com/styles/v1/mapbox/streets-v10/static/pin-m(" + messages.getLon() +","+messages.getLat() +")/" + messages.getLon()+","+messages.getLat()+",15/400x300?access_token=pk.eyJ1IjoibWFpbnU3MyIsImEiOiJjazlhNGtqMmEwNDN1M25udnAyNjZ5dXJkIn0.ZRZ1T8LVImkeXmieZDYqUg";
+                Picasso.get().load(URL).into(messageViewHolder.mapR);
+
+                //messageViewHolder.mapR.setImageBitmap(getBitmapFromURL(URL));
+                messageViewHolder.locR.setText(messages.getMessage());
+
+                SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
+                ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE);
+                messageViewHolder.timeR.setText(ss2);
+
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                    }
+                });
+
+
+            }
+
+        }
         else if (fromMessageType.equals("image")){
             if(fromUserID.equals(messageSenderId))
             {
@@ -318,12 +406,59 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.messageSenderPicture.setVisibility(View.VISIBLE);
                 Picasso.get().load(messages.getMessage()).into(messageViewHolder.messageSenderPicture);
+
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Dialog builder = new Dialog(messageViewHolder.itemView.getContext(),R.style.RoundedDialog);
+                        builder.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                        builder.getWindow().setBackgroundDrawable(
+                                new ColorDrawable(android.graphics.Color.TRANSPARENT));
+                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialogInterface) {
+                                //nothing;
+                            }
+                        });
+
+                        ImageView imageView = new ImageView(messageViewHolder.itemView.getContext());
+                        Picasso.get().load(messages.getMessage()).into(imageView);
+                        builder.addContentView(imageView, new RelativeLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT));
+                        builder.show();
+                    }
+                });
             }else
             {
 
                 messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
                 messageViewHolder.messageReceiverPicture.setVisibility(View.VISIBLE);
                 Picasso.get().load(messages.getMessage()).into(messageViewHolder.messageReceiverPicture);
+
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Dialog builder = new Dialog(messageViewHolder.itemView.getContext(),R.style.RoundedDialog);
+                        builder.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                        builder.getWindow().setBackgroundDrawable(
+                                new ColorDrawable(android.graphics.Color.TRANSPARENT));
+                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialogInterface) {
+                                //nothing;
+                            }
+                        });
+
+                        ImageView imageView = new ImageView(messageViewHolder.itemView.getContext());
+                        Picasso.get().load(messages.getMessage()).into(imageView);
+                        builder.addContentView(imageView, new RelativeLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT));
+                        builder.show();
+                    }
+                });
+
 
             }
         }
@@ -624,7 +759,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
 
                 messageViewHolder.audioOut.setVisibility(View.VISIBLE);
-                messageViewHolder.dateS.setText(messages.getTime());
+
+                SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
+                ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE);
+                messageViewHolder.dateS.setText(ss2);
 
                 messageViewHolder.playS.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -737,13 +875,23 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                     }
                 });
 
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                    }
+                });
+
             }
             else
             {
 
                 messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
                 messageViewHolder.audioIn.setVisibility(View.VISIBLE);
-                messageViewHolder.dateR.setText(messages.getTime());
+
+                SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
+                ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE);
+                messageViewHolder.dateR.setText(ss2);
 
                 messageViewHolder.playR.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -862,10 +1010,18 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                     }
                 });
 
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                    }
+                });
+
             }
 
         }
     }
+
 
 
 
@@ -932,5 +1088,19 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     }
 
 
+    public static Bitmap getBitmapFromURL(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            // Log exception
+            return null;
+        }
+    }
 
 }

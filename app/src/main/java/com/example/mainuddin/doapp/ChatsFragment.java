@@ -113,6 +113,8 @@ public class ChatsFragment extends Fragment
                                                     holder.last_msg.setText("\uD83D\uDCC3");
                                                 }else if(messages.getType().equals("mp3")){
                                                     holder.last_msg.setText("\uD83C\uDFA4");
+                                                }else if(messages.getType().equals("location")){
+                                                    holder.last_msg.setText("\uD83D\uDCCD");
                                                 }
                                                 else{
                                                     if(!messages.isIsseen()){
