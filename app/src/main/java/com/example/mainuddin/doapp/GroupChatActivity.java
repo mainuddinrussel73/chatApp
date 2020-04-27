@@ -1,6 +1,7 @@
 package com.example.mainuddin.doapp;
 
 import android.content.DialogInterface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
@@ -9,6 +10,8 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -27,6 +30,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,8 +47,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class GroupChatActivity extends AppCompatActivity implements ExampleBottomSheetDialog.BottomSheetListener
 {
@@ -62,12 +68,20 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
     public static RecyclerView userMessagesList;
     private DatabaseReference GroupRef;
     public static  String msgKey;
+    boolean canclick = false;
+    CircleImageView user1,user2;
+    TextView tagg;
+    Set<String> set = new HashSet<>();
+    String User1 = "",User2="";
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         setContentView(R.layout.activity_group_chat);
 
 
@@ -88,6 +102,91 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
 
 
         GetUserInfo();
+
+        GroupNameRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Iterator iterator = dataSnapshot.getChildren().iterator();
+                int i = 2;
+                while (iterator.hasNext()) {
+
+                    DataSnapshot snapshot = ((DataSnapshot) iterator.next());
+
+                    if (snapshot.getValue().equals("member")) {
+                        set.add(snapshot.getKey());
+
+                        if(i==2){
+                            User1 =  snapshot.getKey();
+                        }else if(i==1){
+                            User2 = snapshot.getKey();
+                        }
+                        i--;
+
+
+
+                    }
+
+
+                }
+                if(set.size()<=2){
+                    tagg.setText("+"+(set.size())+"Users ");
+                }
+                else {tagg.setText("+"+(set.size()-2)+"Users ");}
+                FirebaseDatabase.getInstance().getReference().child("Users").child(User1).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot)
+                    {
+                        if (dataSnapshot.hasChild("image"))
+                        {
+                            String receiverImage = dataSnapshot.child("image").getValue().toString();
+
+                            Picasso.get().load(receiverImage).placeholder(R.drawable.profile_image).into(user1);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+                FirebaseDatabase.getInstance().getReference().child("Users").child(User2).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot)
+                    {
+                        if (dataSnapshot.hasChild("image"))
+                        {
+                            String receiverImage = dataSnapshot.child("image").getValue().toString();
+
+                            Picasso.get().load(receiverImage).placeholder(R.drawable.profile_image).into(user2);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+
+
+
+
+
+
+
+
         SendMessageButton.setVisibility(View.GONE);
         SendLikeButton.setVisibility(View.VISIBLE);
 
@@ -142,13 +241,11 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
             }
         });
 
-        ImageButton remove_user = findViewById(R.id.remove_user);
-        remove_user.setVisibility(View.GONE);
         GroupNameRef.child(currentUserID).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if(dataSnapshot.getValue(String.class).equals("leader")){
-                    remove_user.setVisibility(View.VISIBLE);
+                    canclick = true;
                 }
             }
 
@@ -158,125 +255,6 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
             }
         });
 
-        remove_user.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                GroupNameRef.addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot)
-                    {
-                        Set<String> set = new HashSet<>();
-                        Iterator iterator = dataSnapshot.getChildren().iterator();
-
-                        while (iterator.hasNext())
-                        {
-
-                            DataSnapshot snapshot = ((DataSnapshot)iterator.next());
-                            System.out.println(snapshot.getValue());
-
-                            if(snapshot.getValue().equals("member")){
-                                set.add(snapshot.getKey());
-
-
-
-                            }
-
-
-
-                        }
-
-
-                        AlertDialog.Builder builderSingle = new AlertDialog.Builder(GroupChatActivity.this,R.style.RoundedDialog);
-                        builderSingle.setIcon(R.drawable.chat);
-                        builderSingle.setTitle("Select One Name:-");
-
-                        final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(GroupChatActivity.this, android.R.layout.select_dialog_singlechoice);
-
-                        HashMap<String,String> map = new HashMap<>();
-                        for (String sa:
-                             set) {
-                            FirebaseDatabase.getInstance().getReference().child("Users").child(sa).addChildEventListener(new ChildEventListener() {
-                                @Override
-                                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-
-                                    if(dataSnapshot.getKey().equals("name")){
-                                        System.out.println(dataSnapshot.getValue().toString());
-                                        String name = dataSnapshot.getValue().toString();
-                                        map.put(name,sa);
-                                        arrayAdapter.add(name);
-                                    }
-
-
-                                }
-
-                                @Override
-                                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-                                }
-
-                                @Override
-                                public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-                                }
-
-                                @Override
-                                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
-
-
-                        }
-
-
-                        builderSingle.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-
-                        builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                String strName = arrayAdapter.getItem(which);
-                                AlertDialog.Builder builderInner = new AlertDialog.Builder(GroupChatActivity.this,R.style.RoundedDialog);
-                                builderInner.setMessage(strName);
-                                builderInner.setTitle("Your Selected Item is");
-                                builderInner.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog,int which) {
-                                        dialog.dismiss();
-
-                                        System.out.println(map.get(strName)+"val");
-                                        System.out.println(GroupNameRef.child(map.get(strName)).removeValue().isSuccessful());
-
-
-                                    }
-                                });
-                                builderInner.show();
-                            }
-                        });
-                        builderSingle.show();
-
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-
-
-
-
-            }
-        });
     }
 
 
@@ -289,6 +267,39 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
         messagesList.clear();
 
         messageAdapter.notifyDataSetChanged();
+
+
+
+        GroupNameRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Iterator iterator = dataSnapshot.getChildren().iterator();
+                while (iterator.hasNext()) {
+
+                    DataSnapshot snapshot = ((DataSnapshot) iterator.next());
+
+                    if (snapshot.getValue().equals("member")) {
+                        set.add(snapshot.getKey());
+
+
+
+                    }
+
+
+                }
+
+
+
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
 
         GroupNameRef.addChildEventListener(new ChildEventListener() {
             @Override
@@ -333,9 +344,23 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
         setSupportActionBar(mToolbar);
         getSupportActionBar().setTitle(currentGroupName);
 
+        mToolbar.setNavigationIcon(getResources().getDrawable(R.drawable.ic_arrow_back_black_24dp));
+        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //What to do on back clicked
+                finish();
+            }
+        });
+
+        mToolbar.setBackgroundDrawable(ContextCompat.getDrawable(this,R.drawable.message_edit));
+
         SendMessageButton = (ImageButton) findViewById(R.id.send_message_button);
         SendLikeButton = findViewById(R.id.send_like_button);
         userMessageInput = (EditText) findViewById(R.id.input_message);
+        user1 = findViewById(R.id.remove_user);
+        user2 = findViewById(R.id.remove_use1r);
+        tagg = findViewById(R.id.use_count);
 
         messageAdapter = new GroupMessageAdapter(messagesList);
         userMessagesList = (RecyclerView) findViewById(R.id.group_messages_list_of_users);
@@ -570,6 +595,92 @@ public class GroupChatActivity extends AppCompatActivity implements ExampleBotto
 
 
 
+        }
+        else if(text.equals("remove")){
+            if(canclick) {
+
+
+                AlertDialog.Builder builderSingle = new AlertDialog.Builder(GroupChatActivity.this, R.style.RoundedDialog);
+                builderSingle.setIcon(R.drawable.chat);
+                builderSingle.setTitle("Select One Name:-");
+
+                final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(GroupChatActivity.this, android.R.layout.select_dialog_singlechoice);
+
+                HashMap<String, String> map = new HashMap<>();
+                for (String sa :
+                        set) {
+                    FirebaseDatabase.getInstance().getReference().child("Users").child(sa).addChildEventListener(new ChildEventListener() {
+                        @Override
+                        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+
+                            if (dataSnapshot.getKey().equals("name")) {
+                                System.out.println(dataSnapshot.getValue().toString());
+                                String name = dataSnapshot.getValue().toString();
+                                map.put(name, sa);
+                                arrayAdapter.add(name);
+                            }
+
+
+                        }
+
+                        @Override
+                        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+                        }
+
+                        @Override
+                        public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+                        }
+
+                        @Override
+                        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+
+
+                }
+
+
+                builderSingle.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
+                builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String strName = arrayAdapter.getItem(which);
+                        AlertDialog.Builder builderInner = new AlertDialog.Builder(GroupChatActivity.this, R.style.RoundedDialog);
+                        builderInner.setMessage(strName);
+                        builderInner.setTitle("Your Selected Item is");
+                        builderInner.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+
+                                System.out.println(map.get(strName) + "val");
+                                System.out.println(GroupNameRef.child(map.get(strName)).removeValue().isSuccessful());
+
+
+                            }
+                        });
+                        builderInner.show();
+                    }
+                });
+                builderSingle.show();
+
+            }else{
+                Toast.makeText(GroupChatActivity.this,"You are not an admin.",Toast.LENGTH_LONG).show();
+            }
         }
 
     }

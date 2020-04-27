@@ -16,6 +16,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.infinityandroid.roundedimageview.RoundedImageView;
 import com.squareup.picasso.Picasso;
 
 import androidx.annotation.NonNull;
@@ -139,7 +140,7 @@ public class ContactsFragment extends Fragment
             @Override
             public ContactsViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i)
             {
-                View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.users_display_layout, viewGroup, false);
+                View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.user_display_contact, viewGroup, false);
                 ContactsViewHolder viewHolder = new ContactsViewHolder(view);
                 return viewHolder;
             }
@@ -155,7 +156,7 @@ public class ContactsFragment extends Fragment
     public static class ContactsViewHolder extends RecyclerView.ViewHolder
     {
         TextView userName, userStatus;
-        CircleImageView profileImage;
+        RoundedImageView profileImage;
         ImageView onlineIcon;
 
 

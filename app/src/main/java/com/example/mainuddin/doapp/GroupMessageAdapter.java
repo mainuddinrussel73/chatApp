@@ -28,6 +28,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
@@ -105,6 +106,7 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
         public RelativeLayout pollIn,pollOut;
         TextView dateS,dateR;
         ImageButton playS,playR;
+        LinearLayout sendS,receiveR;
         SeekBar seekS,seekR;
         TextView audioTS,audioTR;
         TextView sender_seen,sender_img_seen,sender_m_seen,sender_file_seen;
@@ -129,6 +131,8 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
             pollIn = itemView.findViewById(R.id.poll_in);
             pollOut = itemView.findViewById(R.id.poll_out);
 
+            sendS = itemView.findViewById(R.id.sender);
+            receiveR = itemView.findViewById(R.id.receiver);
 
             fileIn = itemView.findViewById(R.id.file_in);
             fileOut = itemView.findViewById(R.id.file_out);
@@ -245,15 +249,17 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
         messageViewHolder.sender_img_seen.setVisibility(View.GONE);
         messageViewHolder.sender_m_seen.setVisibility(View.GONE);
         messageViewHolder.sender_file_seen.setVisibility(View.GONE);
+        messageViewHolder.sendS.setVisibility(View.GONE);
+        messageViewHolder.receiveR.setVisibility(View.GONE);
 
 
         if (fromMessageType.equals("text")) {
             if (fromUserID.equals(messageSenderId))
             {
+                messageViewHolder.sendS.setVisibility(View.VISIBLE);
 
                 messageViewHolder.senderMessageText.setVisibility(View.VISIBLE);
 
-                messageViewHolder.senderMessageText.setBackgroundResource(R.drawable.sender_messages_layout);
                 messageViewHolder.senderMessageText.setTextColor(Color.WHITE);
 
                 String text= messages.getName() + "\n\n" + messages.getMessage() + "\n\n"+ messages.getTime() + " - " + messages.getDate();
@@ -279,10 +285,12 @@ public class GroupMessageAdapter extends RecyclerView.Adapter<GroupMessageAdapte
             }
             else
             {
+
+                messageViewHolder.receiveR.setVisibility(View.VISIBLE);
+
                 messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
                 messageViewHolder.receiverMessageText.setVisibility(View.VISIBLE);
 
-                messageViewHolder.receiverMessageText.setBackgroundResource(R.drawable.receiver_messages_layout);
                 messageViewHolder.receiverMessageText.setTextColor(Color.BLACK);
 
 

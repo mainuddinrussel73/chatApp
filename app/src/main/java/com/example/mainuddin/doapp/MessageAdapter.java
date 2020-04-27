@@ -31,14 +31,19 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.mainuddin.doapp.R;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -95,10 +100,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     {
         public TextView senderMessageText, receiverMessageText;
         public CircleImageView receiverProfileImage;
-        public RoundedImageView messageSenderPicture, messageReceiverPicture,likeS,likeR;
+        public ImageView messageSenderPicture, messageReceiverPicture;
+        public RoundedImageView likeS,likeR;
         public RelativeLayout audioIn,audioOut,mapIn,mapOut;
         public RelativeLayout fileIn,fileOut;
-        TextView dateS,dateR;
+        MaterialCardView send,receive;
+        TextView dateS,dateR,dateSF,dateRF;
+        LinearLayout sendS,receiveR;
         ImageButton playS,playR;
         SeekBar seekS,seekR;
         TextView audioTS,audioTR;
@@ -116,16 +124,26 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             senderMessageText = (TextView) itemView.findViewById(R.id.sender_messsage_text);
             receiverMessageText = (TextView) itemView.findViewById(R.id.receiver_message_text);
             receiverProfileImage = (CircleImageView) itemView.findViewById(R.id.message_profile_image);
-            messageReceiverPicture = itemView.findViewById(R.id.message_receiver_image_view);
-            messageSenderPicture = itemView.findViewById(R.id.message_sender_image_view);
+            send = itemView.findViewById(R.id.sender_img);
+            receive = itemView.findViewById(R.id.receiver_img);
+
+            messageReceiverPicture = receive.findViewById(R.id.message_receiver_image_view);
+            messageSenderPicture = send.findViewById(R.id.message_sender_image_view);
+
             audioIn = itemView.findViewById(R.id.audio_in);
             audioOut = itemView.findViewById(R.id.audio_out);
+
+            sendS = itemView.findViewById(R.id.sender);
+            receiveR = itemView.findViewById(R.id.receiver);
 
             mapIn = itemView.findViewById(R.id.map_in);
             mapOut = itemView.findViewById(R.id.map_out);
 
             fileIn = itemView.findViewById(R.id.file_in);
             fileOut = itemView.findViewById(R.id.file_out);
+
+            dateSF = fileOut.findViewById(R.id.date_text);
+            dateRF = fileIn.findViewById(R.id.date_text);
 
             dateS = audioOut.findViewById(R.id.date_text);
             dateR = audioIn.findViewById(R.id.date_text);
@@ -235,6 +253,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         messageViewHolder.sender_m_seen.setVisibility(View.GONE);
         messageViewHolder.sender_file_seen.setVisibility(View.GONE);
         messageViewHolder.sender_loc_seen.setVisibility(View.GONE);
+        messageViewHolder.sendS.setVisibility(View.GONE);
+        messageViewHolder.receiveR.setVisibility(View.GONE);
 
 
         if (fromMessageType.equals("text")) {
@@ -253,10 +273,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                     }
 
 
+                    messageViewHolder.sendS.setVisibility(View.VISIBLE);
 
                 messageViewHolder.senderMessageText.setVisibility(View.VISIBLE);
 
-                messageViewHolder.senderMessageText.setBackgroundResource(R.drawable.sender_messages_layout);
                 messageViewHolder.senderMessageText.setTextColor(Color.WHITE);
 
                 SpannableString ss1=  new SpannableString(messages.getMessage());
@@ -276,10 +296,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             }
             else
             {
+                messageViewHolder.receiveR.setVisibility(View.VISIBLE);
                 messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
                 messageViewHolder.receiverMessageText.setVisibility(View.VISIBLE);
 
-                messageViewHolder.receiverMessageText.setBackgroundResource(R.drawable.receiver_messages_layout);
                 messageViewHolder.receiverMessageText.setTextColor(Color.BLACK);
 
                 SpannableString ss1=  new SpannableString(messages.getMessage());
@@ -405,7 +425,15 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
 
                 messageViewHolder.messageSenderPicture.setVisibility(View.VISIBLE);
-                Picasso.get().load(messages.getMessage()).into(messageViewHolder.messageSenderPicture);
+
+                if(messages.getName().trim().contains("gif")){
+                    System.out.println(messages.getName());
+                    Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE)).placeholder(R.drawable.profile_image).into(messageViewHolder.messageSenderPicture);
+                }
+                else{
+                    Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).placeholder(R.drawable.profile_image).into(messageViewHolder.messageSenderPicture);
+                }
+
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -422,7 +450,15 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                         });
 
                         ImageView imageView = new ImageView(messageViewHolder.itemView.getContext());
-                        Picasso.get().load(messages.getMessage()).into(imageView);
+
+                        if(messages.getName().trim().contains("gif")){
+                            System.out.println(messages.getName());
+                            Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE)).placeholder(R.drawable.profile_image).into(imageView);
+                        }
+                        else{
+                            Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).placeholder(R.drawable.profile_image).into(imageView);
+                        }
+
                         builder.addContentView(imageView, new RelativeLayout.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT));
@@ -434,7 +470,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
                 messageViewHolder.messageReceiverPicture.setVisibility(View.VISIBLE);
-                Picasso.get().load(messages.getMessage()).into(messageViewHolder.messageReceiverPicture);
+                if(messages.getName().trim().contains("gif")){
+                    System.out.println(messages.getName());
+                    Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE)).placeholder(R.drawable.profile_image).into(messageViewHolder.messageReceiverPicture);
+                }
+                else{
+                    Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).placeholder(R.drawable.profile_image).into(messageViewHolder.messageReceiverPicture);
+                }
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -451,7 +493,16 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                         });
 
                         ImageView imageView = new ImageView(messageViewHolder.itemView.getContext());
-                        Picasso.get().load(messages.getMessage()).into(imageView);
+
+
+                        if(messages.getName().trim().contains("gif")){
+                            System.out.println(messages.getName());
+                            Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE)).placeholder(R.drawable.profile_image).into(imageView);
+                        }
+                        else{
+                            Glide.with(messageViewHolder.itemView.getContext()).load(messages.getMessage()).placeholder(R.drawable.profile_image).into(imageView);
+                        }
+
                         builder.addContentView(imageView, new RelativeLayout.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT));
@@ -489,9 +540,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
 
-                messageViewHolder.fileST.setText(finalText);
+                messageViewHolder.fileST.setText(ss1);
+                messageViewHolder.dateSF.setText(ss2);
+
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -503,6 +555,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
             }else
             {
+
+
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
 
                 messageViewHolder.fileIn.setVisibility(View.VISIBLE);
                 messageViewHolder.fileR.setVisibility(View.VISIBLE);
@@ -517,9 +572,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
 
-                messageViewHolder.fileRT.setText(finalText);
+
+                messageViewHolder.fileRT.setText(ss1);
+                messageViewHolder.dateRF.setText(ss2);
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -561,9 +617,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
+                messageViewHolder.fileST.setText(ss1);
+                messageViewHolder.dateSF.setText(ss2);
 
-                messageViewHolder.fileST.setText(finalText);
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -574,6 +630,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
             }else
             {
+
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
 
                 messageViewHolder.fileIn.setVisibility(View.VISIBLE);
                 messageViewHolder.fileR.setVisibility(View.VISIBLE);
@@ -588,9 +646,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
+                messageViewHolder.fileRT.setText(ss1);
+                messageViewHolder.dateRF.setText(ss2);
 
-                messageViewHolder.fileRT.setText(finalText);
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -629,9 +687,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
-
-                messageViewHolder.fileST.setText(finalText);
+                messageViewHolder.fileST.setText(ss1);
+                messageViewHolder.dateSF.setText(ss2);
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -643,6 +700,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
             }else
             {
+
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
 
                 messageViewHolder.fileIn.setVisibility(View.VISIBLE);
                 messageViewHolder.fileR.setVisibility(View.VISIBLE);
@@ -657,9 +716,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
-
-                messageViewHolder.fileRT.setText(finalText);
+                messageViewHolder.fileRT.setText(ss1);
+                messageViewHolder.dateRF.setText(ss2);
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -699,9 +757,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
-
-                messageViewHolder.fileST.setText(finalText);
+                messageViewHolder.fileST.setText(ss1);
+                messageViewHolder.dateSF.setText(ss2);
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -713,6 +770,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
             }else
             {
+
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
 
                 messageViewHolder.fileIn.setVisibility(View.VISIBLE);
                 messageViewHolder.fileR.setVisibility(View.VISIBLE);
@@ -727,9 +786,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
                 ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
 
-                CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
-
-                messageViewHolder.fileRT.setText(finalText);
+                messageViewHolder.fileRT.setText(ss1);
+                messageViewHolder.dateRF.setText(ss2);
 
                 messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override

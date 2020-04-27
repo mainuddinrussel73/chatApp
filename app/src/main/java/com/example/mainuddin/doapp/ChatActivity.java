@@ -1,6 +1,7 @@
 package com.example.mainuddin.doapp;
 
 import android.app.ProgressDialog;
+import android.content.ClipDescription;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -12,9 +13,14 @@ import android.os.Environment;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.webkit.MimeTypeMap;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -38,6 +44,7 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
+import com.gsconrad.richcontentedittext.RichContentEditText;
 import com.shivtechs.maplocationpicker.LocationPickerActivity;
 import com.shivtechs.maplocationpicker.MapUtility;
 import com.sinch.android.rtc.PushPair;
@@ -50,7 +57,11 @@ import com.sinch.android.rtc.calling.CallListener;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -66,6 +77,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.inputmethod.InputContentInfoCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -82,7 +94,7 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
     private DatabaseReference RootRef;
 
     private ImageButton SendMessageButton, SendFilesButton,SendLikeButton;
-    private EditText MessageInputText;
+    private RichContentEditText MessageInputText;
 
     private final List<Messages> messagesList = new ArrayList<>();
     private LinearLayoutManager linearLayoutManager;
@@ -124,6 +136,8 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_chat);
 
 
@@ -221,7 +235,7 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
                         "Audio"
 
                 };
-                AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
+                AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this,R.style.RoundedDialog);
                 builder.setTitle("Select File");
                 builder.setItems(Options,new DialogInterface.OnClickListener(){
 
@@ -574,10 +588,20 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setDisplayShowCustomEnabled(true);
+        actionBar.setBackgroundDrawable(ContextCompat.getDrawable(this,R.drawable.message_edit));
 
         LayoutInflater layoutInflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View actionBarView = layoutInflater.inflate(R.layout.custom_chat_bar, null);
         actionBar.setCustomView(actionBarView);
+
+        ChatToolBar.setNavigationIcon(getResources().getDrawable(R.drawable.ic_arrow_back_black_24dp));
+        ChatToolBar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //What to do on back clicked
+                finish();
+            }
+        });
 
         userName = (TextView) findViewById(R.id.custom_profile_name);
         userLastSeen = (TextView) findViewById(R.id.custom_user_last_seen);
@@ -586,7 +610,93 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         SendMessageButton = (ImageButton) findViewById(R.id.send_message_btn);
         SendLikeButton = findViewById(R.id.send_like_btn);
         SendFilesButton = (ImageButton) findViewById(R.id.send_files_btn);
-        MessageInputText = (EditText) findViewById(R.id.input_message);
+        MessageInputText =  findViewById(R.id.input_message);
+        MessageInputText.runListenerInBackground = false;
+        MessageInputText.setOnRichContentListener(new RichContentEditText.OnRichContentListener() {
+            // Called when a keyboard sends rich content
+            @Override
+            public void onRichContent(Uri contentUri, ClipDescription description) {
+                if (description.getMimeTypeCount() > 0) {
+                    System.out.println(contentUri);
+                    StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Image Files");
+                    String messageSenderRef = "Messages/" + messageSenderID + "/" + messageReceiverID;
+                    String messageReceiverRef = "Messages/" + messageReceiverID + "/" + messageSenderID;
+
+                    DatabaseReference userMessageKeyRef = RootRef.child("Messages")
+                            .child(messageSenderID).child(messageReceiverID).push();
+
+                    String messagePushID = userMessageKeyRef.getKey();
+
+                    final String fileExtension = MimeTypeMap.getSingleton()
+                            .getExtensionFromMimeType(description.getMimeType(0));
+                    final String filename = messagePushID+ "." + fileExtension;
+                    File richContentFile = new File(getFilesDir(), filename);
+                    if (!writeToFileFromContentUri(richContentFile, contentUri)) {
+                        Toast.makeText(ChatActivity.this,
+                                "failed", Toast.LENGTH_LONG).show();
+                    } else {
+
+                        final StorageReference filePath = storageReference.child(filename);
+
+
+                        uploadTask = filePath.putFile(contentUri);
+                        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                taskSnapshot.getStorage().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                    @Override
+                                    public void onSuccess(Uri uri) {
+                                        myurl = uri.toString();
+                                        Map messageTextBody = new HashMap();
+                                        messageTextBody.put("message", myurl);
+                                        messageTextBody.put("name", contentUri.getLastPathSegment());
+                                        messageTextBody.put("lat", "0");
+                                        messageTextBody.put("lon", "0");
+                                        messageTextBody.put("type", "image");
+                                        messageTextBody.put("from", messageSenderID);
+                                        messageTextBody.put("to", messageReceiverID);
+                                        messageTextBody.put("messageID", messagePushID);
+                                        messageTextBody.put("time", saveCurrentTime);
+                                        messageTextBody.put("date", saveCurrentDate);
+                                        messageTextBody.put("isseen", false);
+
+                                        Map messageBodyDetails = new HashMap();
+                                        messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+                                        messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+                                        RootRef.updateChildren(messageBodyDetails);
+                                        loadingBar.dismiss();
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        loadingBar.dismiss();
+                                        Toast.makeText(ChatActivity.this,e.getMessage(),Toast.LENGTH_LONG);
+                                    }
+                                });
+                            }
+
+
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                loadingBar.dismiss();
+                                Toast.makeText(ChatActivity.this,e.getMessage(),Toast.LENGTH_LONG);
+                            }
+                        }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                                double d = (100.0*taskSnapshot.getBytesTransferred())/taskSnapshot.getTotalByteCount();
+                                loadingBar.setMessage((int)d+"% Uploading...");
+                            }
+                        });
+
+
+                    }
+                }
+            }
+        });
+
 
         messageAdapter = new MessageAdapter(messagesList);
         userMessagesList = (RecyclerView) findViewById(R.id.private_messages_list_of_users);
@@ -604,6 +714,27 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
         SimpleDateFormat currentTime = new SimpleDateFormat("hh:mm a");
         saveCurrentTime = currentTime.format(calendar.getTime());
+    }
+
+    public boolean writeToFileFromContentUri(File file, Uri uri) {
+        if (file == null || uri == null) return false;
+        try {
+            InputStream stream = getContentResolver().openInputStream(uri);
+            OutputStream output = new FileOutputStream(file);
+            if (stream == null) return false;
+            byte[] buffer = new byte[4 * 1024];
+            int read;
+            while ((read = stream.read(buffer)) != -1) output.write(buffer, 0, read);
+            output.flush();
+            output.close();
+            stream.close();
+            return true;
+        } catch (FileNotFoundException e) {
+            Log.e("CV", "Couldn't open stream: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e("CV", "IOException on stream: " + e.getMessage());
+        }
+        return false;
     }
 
     private void locationPlacesIntent(){

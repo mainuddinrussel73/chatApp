@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="#e6e6e6"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <de.hdodenhof.circleimageview.CircleImageView
@@ -12,28 +13,40 @@
         android:src="@drawable/profile_image"
         />
 
-    <TextView
-        android:id="@+id/receiver_message_text"
-        android:layout_width="190dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_marginTop="10dp"
         android:layout_marginLeft="3dp"
         android:layout_toEndOf="@+id/message_profile_image"
-        android:background="@drawable/receiver_messages_layout"
-        android:text="receiver messages here"
-        android:padding="10dp"
-        android:textSize="14sp"
-        android:textColorLink="#3671A8"
-        android:textColor="@android:color/black"
-        />
+        android:paddingLeft="20dp"
+        android:paddingTop="10dp"
+        android:id="@+id/receiver"
+        android:paddingBottom="10dp"
+        android:paddingRight="10dp"
+        android:background="@drawable/receiver_messages_layout">
+
+        <TextView
+            android:id="@+id/receiver_message_text"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="receiver messages here"
+            android:textSize="14sp"
+            android:textColorLink="#3671A8"
+            android:textColor="@android:color/black"
+            />
+
+    </LinearLayout>
+
+
 
 
 
     <RelativeLayout
         android:id="@+id/audio_in"
         android:layout_width="wrap_content"
-        android:layout_marginLeft="40dp"
+        android:layout_toRightOf="@+id/message_profile_image"
         android:layout_height="wrap_content">
         <include
             layout="@layout/audio_in"></include>
@@ -50,7 +63,7 @@
     <RelativeLayout
         android:id="@+id/file_in"
         android:layout_width="wrap_content"
-        android:layout_marginLeft="40dp"
+        android:layout_toRightOf="@+id/message_profile_image"
         android:layout_height="wrap_content">
         <include
             layout="@layout/file_in"></include>
@@ -67,7 +80,7 @@
     <RelativeLayout
         android:id="@+id/map_in"
         android:layout_width="wrap_content"
-        android:layout_marginLeft="40dp"
+        android:layout_toRightOf="@+id/message_profile_image"
         android:layout_height="wrap_content">
         <include
             layout="@layout/map_in"></include>
@@ -82,16 +95,26 @@
     </RelativeLayout>
 
 
-    <com.infinityandroid.roundedimageview.RoundedImageView
-        android:id="@+id/message_sender_image_view"
-        android:layout_width="220dp"
-        android:layout_height="200dp"
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="wrap_content"
         android:layout_alignParentEnd="true"
+        app:cardCornerRadius="25dp"
+        android:id="@+id/sender_img"
         android:layout_margin="5dp"
-        android:scaleType="centerCrop"
-        android:adjustViewBounds="true"
-        app:corner_radius="10"
-        />
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="#e6e6e6"
+>
+        <ImageView
+            android:id="@+id/message_sender_image_view"
+            android:layout_width="220dp"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"
+            />
+
+    </com.google.android.material.card.MaterialCardView>
+
+
 
     <com.infinityandroid.roundedimageview.RoundedImageView
         android:id="@+id/message_sender_like_view"
@@ -105,17 +128,27 @@
         app:corner_radius="10"
         />
 
-    <com.infinityandroid.roundedimageview.RoundedImageView
-        android:id="@+id/message_receiver_image_view"
-        android:layout_width="220dp"
-        android:layout_height="200dp"
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/receiver_img"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="50dp"
+        android:layout_marginStart="43dp"
         android:layout_marginTop="13dp"
-        android:scaleType="centerCrop"
-        android:adjustViewBounds="true"
-        app:corner_radius="10"
-        />
+        app:cardCornerRadius="25dp"
+        app:cardBackgroundColor="#e6e6e6"
+        >
+
+        <ImageView
+            android:id="@+id/message_receiver_image_view"
+            android:layout_width="220dp"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"
+            />
+
+    </com.google.android.material.card.MaterialCardView>
+
 
     <com.infinityandroid.roundedimageview.RoundedImageView
         android:id="@+id/message_receiver_like_view"
@@ -130,22 +163,33 @@
         app:corner_radius="10"
         />
 
-
-    <TextView
-        android:id="@+id/sender_messsage_text"
-        android:layout_width="190dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="10dp"
-        android:layout_alignParentTop="@+id/receiver_message_text"
-        android:background="@drawable/sender_messages_layout"
-        android:text="sender messages"
-        android:textSize="14sp"
-        android:padding="10dp"
-        android:textColorLink="#A3CEF7"
+        android:layout_alignParentTop="@+id/receiver"
+        android:paddingRight="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:paddingLeft="10dp"
         android:layout_marginRight="5dp"
-        android:textColor="@android:color/white"
-        />
+        android:id="@+id/sender"
+        android:background="@drawable/sender_messages_layout">
+
+        <TextView
+            android:id="@+id/sender_messsage_text"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="sender messages"
+            android:textSize="14sp"
+            android:textColorLink="#A3CEF7"
+            android:textColor="@android:color/white"
+            />
+
+    </LinearLayout>
+
+
 
     <TextView
         android:id="@+id/sender_messsage_seen"
@@ -153,7 +197,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="60dp"
-        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:layout_alignParentTop="@+id/receiver"
         android:text="seen"
         android:textSize="10sp"
         android:padding="10dp"
@@ -169,7 +213,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="-5dp"
-        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:layout_alignParentTop="@+id/receiver"
         android:text="seen"
         android:textSize="10sp"
         android:padding="10dp"
@@ -185,8 +229,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_below="@+id/message_sender_image_view"
-        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:layout_below="@+id/sender_img"
+        android:layout_alignParentTop="@+id/receiver"
         android:text="seen"
         android:textSize="10sp"
         android:padding="10dp"
@@ -202,7 +246,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:layout_alignParentTop="@+id/receiver"
         android:text="seen"
         android:textSize="10sp"
         android:padding="10dp"
@@ -220,12 +264,12 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="0dp"
-        android:layout_alignParentTop="@+id/receiver_message_text"
+        android:layout_alignParentTop="@+id/receiver"
         android:text="seen"
         android:textSize="10sp"
         android:padding="10dp"
         android:textStyle="bold"
-        android:layout_below="@+id/sender_messsage_text"
+        android:layout_below="@+id/sender"
         android:layout_marginRight="5dp"
         android:textColor="#7a7b7d">
 

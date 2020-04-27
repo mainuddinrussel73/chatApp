@@ -7,12 +7,15 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.mainuddin.doapp.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -34,14 +37,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
 
 public class MainActivity extends AppCompatActivity
 {
     private Toolbar mToolbar;
-    private ViewPager myViewPager;
-    private TabLayout myTabLayout;
-    private TabsAccessorAdapter myTabsAccessorAdapter;
 
     private FirebaseUser currentUser;
     private FirebaseAuth mAuth;
@@ -53,6 +55,8 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
 
 
@@ -65,19 +69,59 @@ public class MainActivity extends AppCompatActivity
 
             mToolbar = (Toolbar) findViewById(R.id.main_page_toolbar);
             setSupportActionBar(mToolbar);
-            getSupportActionBar().setTitle("WhatsApp");
 
 
-            myViewPager = (ViewPager) findViewById(R.id.main_tabs_pager);
-            myTabsAccessorAdapter = new TabsAccessorAdapter(getSupportFragmentManager());
-            myViewPager.setAdapter(myTabsAccessorAdapter);
 
 
-            myTabLayout = (TabLayout) findViewById(R.id.main_tabs);
-            myTabLayout.setupWithViewPager(myViewPager);
+            BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+            navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+
+            ChatsFragment chatsFragment = new ChatsFragment();
+            loadFragment(chatsFragment);
+
+
         }catch (Exception e){
             SendUserToLoginActivity();
         }
+    }
+
+    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.navigation_chats:
+                    mToolbar.setTitle("Chats");
+                    ChatsFragment chatsFragment = new ChatsFragment();
+                    loadFragment(chatsFragment);
+                    return true;
+                case R.id.navigation_groups:
+                    mToolbar.setTitle("Groups");
+                    GroupsFragment groupsFragment = new GroupsFragment();
+                    loadFragment(groupsFragment);
+                    return true;
+                case R.id.navigation_contacts:
+                    mToolbar.setTitle("Contacts");
+                    ContactsFragment contactsFragment = new ContactsFragment();
+                    loadFragment(contactsFragment);
+                    return true;
+                case R.id.navigation_requests:
+                    mToolbar.setTitle("Requests");
+                    RequestsFragment requestsFragment = new RequestsFragment();
+                    loadFragment(requestsFragment);
+                    return true;
+            }
+            return false;
+        }
+    };
+
+    private void loadFragment(Fragment fragment) {
+        // load fragment
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.frame_container, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
 
