@@ -41,7 +41,82 @@
 
 
 
+    <LinearLayout
+        android:id="@+id/link_left"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_toEndOf="@+id/message_profile_image"
+        android:layout_height="match_parent">
 
+        <include
+            layout="@layout/link_in"></include>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="13dp"
+            android:paddingLeft="20dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingRight="10dp"
+            android:orientation="vertical"
+            android:background="@drawable/receiver_link_layout">
+
+
+            <TextView
+                android:id="@+id/receiver_message_link"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:text="receiver messages here"
+                android:textSize="14sp"
+                android:textColorLink="#3671A8"
+                android:textColor="@android:color/black"
+                />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/link_right"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <include
+            layout="@layout/link_out"></include>
+
+        <LinearLayout
+            android:layout_gravity="right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="10dp"
+            android:layout_alignParentTop="@+id/receiver"
+            android:paddingRight="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="10dp"
+            android:layout_marginRight="5dp"
+            android:orientation="vertical"
+            android:background="@drawable/sender_link_layout">
+
+            <TextView
+                android:id="@+id/sender_messsage_link"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:text="sender messages"
+                android:textSize="14sp"
+                android:textColorLink="#006AFF"
+                android:textColor="@android:color/white"
+                />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
     <RelativeLayout
         android:id="@+id/audio_in"

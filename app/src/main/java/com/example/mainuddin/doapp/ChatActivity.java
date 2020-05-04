@@ -14,6 +14,7 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -45,6 +46,9 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 import com.gsconrad.richcontentedittext.RichContentEditText;
+import com.leocardz.link.preview.library.LinkPreviewCallback;
+import com.leocardz.link.preview.library.SourceContent;
+import com.leocardz.link.preview.library.TextCrawler;
 import com.shivtechs.maplocationpicker.LocationPickerActivity;
 import com.shivtechs.maplocationpicker.MapUtility;
 import com.sinch.android.rtc.PushPair;
@@ -69,6 +73,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -81,6 +86,7 @@ import androidx.core.view.inputmethod.InputContentInfoCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import de.hdodenhof.circleimageview.CircleImageView;
+
 
 public class ChatActivity extends AppCompatActivity implements ExampleBottomSheetDialog.BottomSheetListener
 {
@@ -216,7 +222,7 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         DisplayLastSeen();
 
 
-            SeenMessage();
+        SeenMessage();
 
 
         updateUserStatus("online");
@@ -227,7 +233,7 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
             @Override
             public void onClick(View view) {
                 CharSequence Options[] = {
-                    "Images",
+                        "Images",
                         "PDF Files",
                         "Text Files",
                         "Ms Power Point Files",
@@ -335,7 +341,7 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
             @Override
             public void onClick(View view) {
 
-               if(call==null){
+                if(call==null){
 
                     call = sinchClient.getCallClient().callUser(messageReceiverID);
                     call.addCallListener(new SinchCallListener());
@@ -652,6 +658,9 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
                                         messageTextBody.put("name", contentUri.getLastPathSegment());
                                         messageTextBody.put("lat", "0");
                                         messageTextBody.put("lon", "0");
+                                        messageTextBody.put("title", "");
+                                        messageTextBody.put("des", "");
+                                        messageTextBody.put("img", "");
                                         messageTextBody.put("type", "image");
                                         messageTextBody.put("from", messageSenderID);
                                         messageTextBody.put("to", messageReceiverID);
@@ -787,6 +796,9 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
                                 messageTextBody.put("name", fileUri.getLastPathSegment());
                                 messageTextBody.put("lat", "0");
                                 messageTextBody.put("lon", "0");
+                                messageTextBody.put("title", "");
+                                messageTextBody.put("des", "");
+                                messageTextBody.put("img", "");
                                 messageTextBody.put("type", checker);
                                 messageTextBody.put("from", messageSenderID);
                                 messageTextBody.put("to", messageReceiverID);
@@ -855,6 +867,9 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
                                 messageTextBody.put("name", fileUri.getLastPathSegment());
                                 messageTextBody.put("lat", "0");
                                 messageTextBody.put("lon", "0");
+                                messageTextBody.put("title", "");
+                                messageTextBody.put("des", "");
+                                messageTextBody.put("img", "");
                                 messageTextBody.put("type", checker);
                                 messageTextBody.put("from", messageSenderID);
                                 messageTextBody.put("to", messageReceiverID);
@@ -1078,70 +1093,70 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
     public  void SeenMessage(){
         System.out.println("called");
-       DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Messages").child(messageReceiverID).child(messageSenderID);
-       seenListener = reference.addValueEventListener(new ValueEventListener() {
-           @Override
-           public void onDataChange(DataSnapshot dataSnapshot) {
-               for(DataSnapshot snapshot : dataSnapshot.getChildren()){
-                   if (snapshot.getValue() != null){
-                       Messages messages = snapshot.getValue(Messages.class);
-                       if((messages.getTo().equals(messageReceiverID) && messages.getFrom().equals(messageSenderID) )
-                       ||
-                       (messages.getTo().equals(messageSenderID) && messages.getFrom().equals(messageReceiverID)  )){
-                           HashMap<String,Object> hashMap = new HashMap<>();
-                           hashMap.put("isseen",true);
-                           snapshot.getRef().updateChildren(hashMap);
-                           update = true;
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Messages").child(messageReceiverID).child(messageSenderID);
+        seenListener = reference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(DataSnapshot snapshot : dataSnapshot.getChildren()){
+                    if (snapshot.getValue() != null){
+                        Messages messages = snapshot.getValue(Messages.class);
+                        if((messages.getTo().equals(messageReceiverID) && messages.getFrom().equals(messageSenderID) )
+                                ||
+                                (messages.getTo().equals(messageSenderID) && messages.getFrom().equals(messageReceiverID)  )){
+                            HashMap<String,Object> hashMap = new HashMap<>();
+                            hashMap.put("isseen",true);
+                            snapshot.getRef().updateChildren(hashMap);
+                            update = true;
 
-                           RootRef.child("Messages").child(messageSenderID).child(messageReceiverID)
-                                   .addChildEventListener(new ChildEventListener() {
-                                       @Override
-                                       public void onChildAdded(DataSnapshot dataSnapshot, String s)
-                                       {
+                            RootRef.child("Messages").child(messageSenderID).child(messageReceiverID)
+                                    .addChildEventListener(new ChildEventListener() {
+                                        @Override
+                                        public void onChildAdded(DataSnapshot dataSnapshot, String s)
+                                        {
 
-                                       }
+                                        }
 
-                                       @Override
-                                       public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                                           Messages messages = dataSnapshot.getValue(Messages.class);
+                                        @Override
+                                        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                                            Messages messages = dataSnapshot.getValue(Messages.class);
 
-                                           if(update) {
-                                               System.out.println("dd");
-                                               messagesList.remove(messagesList.size()-1);
-                                               messagesList.add(messages);
-                                               messageAdapter.notifyDataSetChanged();
-                                               userMessagesList.smoothScrollToPosition(userMessagesList.getAdapter().getItemCount());
-                                               update = false;
-                                           }
-                                       }
+                                            if(update) {
+                                                System.out.println("dd");
+                                                messagesList.remove(messagesList.size()-1);
+                                                messagesList.add(messages);
+                                                messageAdapter.notifyDataSetChanged();
+                                                userMessagesList.smoothScrollToPosition(userMessagesList.getAdapter().getItemCount());
+                                                update = false;
+                                            }
+                                        }
 
-                                       @Override
-                                       public void onChildRemoved(DataSnapshot dataSnapshot) {
+                                        @Override
+                                        public void onChildRemoved(DataSnapshot dataSnapshot) {
 
-                                       }
+                                        }
 
-                                       @Override
-                                       public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                                        @Override
+                                        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
 
-                                       }
+                                        }
 
-                                       @Override
-                                       public void onCancelled(DatabaseError databaseError) {
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
 
-                                       }
-                                   });
-                       }
-                   }
-               }
+                                        }
+                                    });
+                        }
+                    }
+                }
 
 
-           }
+            }
 
-           @Override
-           public void onCancelled(DatabaseError databaseError) {
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
 
-           }
-       });
+            }
+        });
 
 
 
@@ -1165,6 +1180,9 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         messageTextBody.put("name", "location");
         messageTextBody.put("lat", mapModel.getLatitude());
         messageTextBody.put("lon", mapModel.getLongitude());
+        messageTextBody.put("title", "");
+        messageTextBody.put("des", "");
+        messageTextBody.put("img", "");
         messageTextBody.put("type", "location");
         messageTextBody.put("from", messageSenderID);
         messageTextBody.put("to", messageReceiverID);
@@ -1220,6 +1238,9 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
                         messageTextBody.put("name", audioUri.getLastPathSegment());
                         messageTextBody.put("lat", "0");
                         messageTextBody.put("lon", "0");
+                        messageTextBody.put("title", "");
+                        messageTextBody.put("des", "");
+                        messageTextBody.put("img", "");
                         messageTextBody.put("type", "mp3");
                         messageTextBody.put("from", messageSenderID);
                         messageTextBody.put("to", messageReceiverID);
@@ -1273,22 +1294,25 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         final  String messagePushID = userMessageKeyRef.getKey();
 
 
-                    Map messageTextBody = new HashMap();
-                    messageTextBody.put("message", "");
-                    messageTextBody.put("name", "like");
-                    messageTextBody.put("lat", "0");
-                    messageTextBody.put("lon", "0");
-                    messageTextBody.put("type", "emoji");
-                    messageTextBody.put("from", messageSenderID);
-                    messageTextBody.put("to", messageReceiverID);
-                    messageTextBody.put("messageID", messagePushID);
-                    messageTextBody.put("time", saveCurrentTime);
-                    messageTextBody.put("date", saveCurrentDate);
-                    messageTextBody.put("isseen", false);
+        Map messageTextBody = new HashMap();
+        messageTextBody.put("message", "");
+        messageTextBody.put("name", "like");
+        messageTextBody.put("lat", "0");
+        messageTextBody.put("lon", "0");
+        messageTextBody.put("title", "");
+        messageTextBody.put("des", "");
+        messageTextBody.put("img", "");
+        messageTextBody.put("type", "emoji");
+        messageTextBody.put("from", messageSenderID);
+        messageTextBody.put("to", messageReceiverID);
+        messageTextBody.put("messageID", messagePushID);
+        messageTextBody.put("time", saveCurrentTime);
+        messageTextBody.put("date", saveCurrentDate);
+        messageTextBody.put("isseen", false);
 
-                    Map messageBodyDetails = new HashMap();
-                    messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
-                    messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
+        Map messageBodyDetails = new HashMap();
+        messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+        messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
 
         RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
             @Override
@@ -1310,6 +1334,17 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
 
 
     }
+    public static String[] extractLinks(String text) {
+        List<String> links = new ArrayList<String>();
+        Matcher m = Patterns.WEB_URL.matcher(text);
+        while (m.find()) {
+            String url = m.group();
+            Log.d("URL", "URL extracted: " + url);
+            links.add(url);
+        }
+
+        return links.toArray(new String[links.size()]);
+    }
 
     private void SendMessage()
     {
@@ -1321,46 +1356,124 @@ public class ChatActivity extends AppCompatActivity implements ExampleBottomShee
         }
         else
         {
-            String messageSenderRef = "Messages/" + messageSenderID + "/" + messageReceiverID;
-            String messageReceiverRef = "Messages/" + messageReceiverID + "/" + messageSenderID;
+            String[] output = extractLinks(messageText);
 
-            DatabaseReference userMessageKeyRef = RootRef.child("Messages")
-                    .child(messageSenderID).child(messageReceiverID).push();
+            for (String url:
+                    output) {
+                System.out.println(url);
+            }
 
-            String messagePushID = userMessageKeyRef.getKey();
+            if(output.length!=0) {
+                new TextCrawler().makePreview(new LinkPreviewCallback() {
+                    @Override
+                    public void onPre() {
 
-            Map messageTextBody = new HashMap();
-            messageTextBody.put("message", messageText);
-            messageTextBody.put("type", "text");
-            messageTextBody.put("name", "text");
-            messageTextBody.put("lat", "0");
-            messageTextBody.put("lon", "0");
-            messageTextBody.put("from", messageSenderID);
-            messageTextBody.put("to", messageReceiverID);
-            messageTextBody.put("messageID", messagePushID);
-            messageTextBody.put("time", saveCurrentTime);
-            messageTextBody.put("date", saveCurrentDate);
-            messageTextBody.put("isseen", false);
-
-            Map messageBodyDetails = new HashMap();
-            messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
-            messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
-
-            RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
-                @Override
-                public void onComplete(@NonNull Task task)
-                {
-                    if (task.isSuccessful())
-                    {
-                        Toast.makeText(ChatActivity.this, "Message Sent Successfully...", Toast.LENGTH_SHORT).show();
                     }
-                    else
-                    {
-                        Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+
+                    @Override
+                    public void onPos(SourceContent sourceContent, boolean b) {
+                        if (b || sourceContent.getFinalUrl().equals("")) {
+
+                        } else {
+
+                            if (sourceContent.getTitle().equals(""))
+                                sourceContent.setTitle("");
+                            if (sourceContent.getDescription().equals(""))
+                                sourceContent
+                                        .setDescription("");
+
+
+                            String messageSenderRef = "Messages/" + messageSenderID + "/" + messageReceiverID;
+                            String messageReceiverRef = "Messages/" + messageReceiverID + "/" + messageSenderID;
+
+                            DatabaseReference userMessageKeyRef = RootRef.child("Messages")
+                                    .child(messageSenderID).child(messageReceiverID).push();
+
+                            String messagePushID = userMessageKeyRef.getKey();
+
+                            Map messageTextBody = new HashMap();
+                            messageTextBody.put("message", messageText);
+                            messageTextBody.put("type", "link");
+                            messageTextBody.put("name", "link");
+                            messageTextBody.put("lat", "0");
+                            messageTextBody.put("lon", "0");
+                            messageTextBody.put("title", sourceContent.getTitle());
+                            messageTextBody.put("des", sourceContent.getDescription());
+                            messageTextBody.put("img", sourceContent.getImages().get(0));
+                            messageTextBody.put("from", messageSenderID);
+                            messageTextBody.put("to", messageReceiverID);
+                            messageTextBody.put("messageID", messagePushID);
+                            messageTextBody.put("time", saveCurrentTime);
+                            messageTextBody.put("date", saveCurrentDate);
+                            messageTextBody.put("isseen", false);
+
+                            Map messageBodyDetails = new HashMap();
+                            messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+                            messageBodyDetails.put(messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+                            RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
+                                @Override
+                                public void onComplete(@NonNull Task task) {
+                                    if (task.isSuccessful()) {
+                                        Toast.makeText(ChatActivity.this, "Message Sent Successfully...", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                                    }
+                                    MessageInputText.setText("");
+                                }
+                            });
+
+
+                        }
                     }
-                    MessageInputText.setText("");
-                }
-            });
+                }, output[0]);
+
+            }else{
+                String messageSenderRef = "Messages/" + messageSenderID + "/" + messageReceiverID;
+                String messageReceiverRef = "Messages/" + messageReceiverID + "/" + messageSenderID;
+
+                DatabaseReference userMessageKeyRef = RootRef.child("Messages")
+                        .child(messageSenderID).child(messageReceiverID).push();
+
+                String messagePushID = userMessageKeyRef.getKey();
+
+                Map messageTextBody = new HashMap();
+                messageTextBody.put("message", messageText);
+                messageTextBody.put("type", "text");
+                messageTextBody.put("name", "text");
+                messageTextBody.put("lat", "0");
+                messageTextBody.put("lon", "0");
+                messageTextBody.put("title", "");
+                messageTextBody.put("des", "");
+                messageTextBody.put("img", "");
+                messageTextBody.put("from", messageSenderID);
+                messageTextBody.put("to", messageReceiverID);
+                messageTextBody.put("messageID", messagePushID);
+                messageTextBody.put("time", saveCurrentTime);
+                messageTextBody.put("date", saveCurrentDate);
+                messageTextBody.put("isseen", false);
+
+                Map messageBodyDetails = new HashMap();
+                messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+                messageBodyDetails.put( messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+                RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
+                    @Override
+                    public void onComplete(@NonNull Task task)
+                    {
+                        if (task.isSuccessful())
+                        {
+                            Toast.makeText(ChatActivity.this, "Message Sent Successfully...", Toast.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                        }
+                        MessageInputText.setText("");
+                    }
+                });
+            }
+
         }
 
 

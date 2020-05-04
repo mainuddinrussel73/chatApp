@@ -9,10 +9,12 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
@@ -25,6 +27,8 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.util.Linkify;
 import android.util.Log;
+import android.util.Pair;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,6 +58,9 @@ import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.infinityandroid.roundedimageview.RoundedImageView;
+import com.leocardz.link.preview.library.LinkPreviewCallback;
+import com.leocardz.link.preview.library.SourceContent;
+import com.leocardz.link.preview.library.TextCrawler;
 import com.squareup.picasso.Picasso;
 
 import java.io.DataInputStream;
@@ -64,13 +71,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -89,31 +101,34 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     int length;
 
 
+
     public MessageAdapter (List<Messages> userMessagesList)
     {
         this.userMessagesList = userMessagesList;
+
     }
 
 
 
     public class MessageViewHolder extends RecyclerView.ViewHolder
     {
-        public TextView senderMessageText, receiverMessageText;
+        public TextView senderMessageText, receiverMessageText, senderLinkText,receiverLinkText;
         public CircleImageView receiverProfileImage;
         public ImageView messageSenderPicture, messageReceiverPicture;
         public RoundedImageView likeS,likeR;
-        public RelativeLayout audioIn,audioOut,mapIn,mapOut;
+        public RelativeLayout audioIn,audioOut,mapIn,mapOut,linkIn,linkOut;
         public RelativeLayout fileIn,fileOut;
         MaterialCardView send,receive;
         TextView dateS,dateR,dateSF,dateRF;
-        LinearLayout sendS,receiveR;
+        LinearLayout sendS,receiveR,linkIn1,linkOut1;
         ImageButton playS,playR;
         SeekBar seekS,seekR;
         TextView audioTS,audioTR;
         TextView sender_seen,sender_img_seen,sender_m_seen,sender_file_seen,sender_loc_seen;
-        ImageView fileS,fileR;
+        ImageView fileS,fileR,linkR,linkS;
         RoundedImageView mapS,mapR;
-        TextView fileST,fileRT,locS,locR,timeS,timeR;
+        TextView fileST,fileRT,locS,locR,timeS,timeR,titleR,titleS,descriptionR,descriptionS;
+
 
 
 
@@ -132,6 +147,24 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
             audioIn = itemView.findViewById(R.id.audio_in);
             audioOut = itemView.findViewById(R.id.audio_out);
+
+            linkIn1 = itemView.findViewById(R.id.link_left);
+            linkOut1 = itemView.findViewById(R.id.link_right);
+
+            senderLinkText = linkOut1.findViewById(R.id.sender_messsage_link);
+            receiverLinkText = linkIn1.findViewById(R.id.receiver_message_link);
+
+            linkIn = linkIn1.findViewById(R.id.link_in);
+            linkOut = linkOut1.findViewById(R.id.link_out);
+
+            linkS = linkOut.findViewById(R.id.image_post_set);
+            linkR = linkIn.findViewById(R.id.image_post_set);
+
+            titleS = linkOut.findViewById(R.id.title);
+            titleR = linkIn.findViewById(R.id.title);
+
+            descriptionS = linkOut.findViewById(R.id.description);
+            descriptionR = linkIn.findViewById(R.id.description);
 
             sendS = itemView.findViewById(R.id.sender);
             receiveR = itemView.findViewById(R.id.receiver);
@@ -186,6 +219,30 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     }
 
 
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
+        }
+    }
 
 
     @NonNull
@@ -199,6 +256,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
         return new MessageViewHolder(view);
     }
+
 
 
 
@@ -255,14 +313,25 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         messageViewHolder.sender_loc_seen.setVisibility(View.GONE);
         messageViewHolder.sendS.setVisibility(View.GONE);
         messageViewHolder.receiveR.setVisibility(View.GONE);
+        messageViewHolder.linkOut.setVisibility(View.GONE);
+        messageViewHolder.linkIn.setVisibility(View.GONE);
+        messageViewHolder.linkOut1.setVisibility(View.GONE);
+        messageViewHolder.linkIn1.setVisibility(View.GONE);
+
+
 
 
         if (fromMessageType.equals("text")) {
-            if (fromUserID.equals(messageSenderId))
-            {
 
-                messageViewHolder.sender_m_seen.setVisibility(View.VISIBLE);
-                if(messages.isIsseen() )
+
+
+
+
+                if (fromUserID.equals(messageSenderId))
+                {
+
+                    messageViewHolder.sender_m_seen.setVisibility(View.VISIBLE);
+                    if(messages.isIsseen() )
                     {
                         messageViewHolder.sender_m_seen.setText("Seen");
                     }
@@ -275,9 +344,80 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                     messageViewHolder.sendS.setVisibility(View.VISIBLE);
 
-                messageViewHolder.senderMessageText.setVisibility(View.VISIBLE);
+                    messageViewHolder.senderMessageText.setVisibility(View.VISIBLE);
 
-                messageViewHolder.senderMessageText.setTextColor(Color.WHITE);
+                    messageViewHolder.senderMessageText.setTextColor(Color.WHITE);
+
+                    SpannableString ss1=  new SpannableString(messages.getMessage());
+                    ss1.setSpan(new AbsoluteSizeSpan(20,true), 0, messages.getMessage().length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
+
+                    SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
+                    ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
+
+                    CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
+
+                    messageViewHolder.senderMessageText.setText(finalText);
+
+                    messageViewHolder.senderMessageText.setLinkTextColor(Color.parseColor("#A3CEF7"));
+
+                    Linkify.addLinks(messageViewHolder.senderMessageText, Linkify.WEB_URLS | Linkify.PHONE_NUMBERS);
+                    Linkify.addLinks(messageViewHolder.senderMessageText, Linkify.ALL );
+                }
+                else
+                {
+                    messageViewHolder.receiveR.setVisibility(View.VISIBLE);
+                    messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
+                    messageViewHolder.receiverMessageText.setVisibility(View.VISIBLE);
+
+                    messageViewHolder.receiverMessageText.setTextColor(Color.BLACK);
+
+                    SpannableString ss1=  new SpannableString(messages.getMessage());
+                    ss1.setSpan(new AbsoluteSizeSpan(20,true), 0, messages.getMessage().length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
+
+                    SpannableString ss2=  new SpannableString(messages.getTime() + " - " + messages.getDate());
+                    ss2.setSpan(new AbsoluteSizeSpan(10,true), 0, ss2.length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
+
+                    CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
+
+                    messageViewHolder.receiverMessageText.setText(finalText);
+                    messageViewHolder.receiverMessageText.setLinkTextColor(Color.parseColor("#2f6699"));
+
+                    Linkify.addLinks(messageViewHolder.receiverMessageText, Linkify.WEB_URLS | Linkify.PHONE_NUMBERS);
+                    Linkify.addLinks(messageViewHolder.receiverMessageText, Linkify.ALL );
+
+                }
+
+
+        }
+        else if(fromMessageType.equals("link")){
+            if (fromUserID.equals(messageSenderId))
+            {
+
+                // messageViewHolder.sender_m_seen.setVisibility(View.VISIBLE);
+                if(messages.isIsseen() )
+                {
+                    // messageViewHolder.sender_m_seen.setText("Seen");
+                }
+                else
+                {
+                    //messageViewHolder.sender_m_seen.setText("Delivered");
+
+                }
+
+                messageViewHolder.linkOut1.setVisibility(View.VISIBLE);
+                messageViewHolder.linkOut.setVisibility(View.VISIBLE);
+
+
+                messageViewHolder.titleS.setText(messages.getTitle());
+                messageViewHolder.descriptionS.setText(messages.getDes());
+
+
+                new DownloadImageTask(messageViewHolder.linkS).execute(messages.getImg());
+
+
+                messageViewHolder.senderLinkText.setVisibility(View.VISIBLE);
+
+                messageViewHolder.senderLinkText.setTextColor(Color.WHITE);
 
                 SpannableString ss1=  new SpannableString(messages.getMessage());
                 ss1.setSpan(new AbsoluteSizeSpan(20,true), 0, messages.getMessage().length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
@@ -287,20 +427,28 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
 
-                messageViewHolder.senderMessageText.setText(finalText);
+                messageViewHolder.senderLinkText.setText(finalText);
 
-                messageViewHolder.senderMessageText.setLinkTextColor(Color.parseColor("#A3CEF7"));
+                messageViewHolder.senderLinkText.setLinkTextColor(Color.parseColor("#E9F0F4"));
 
-                Linkify.addLinks(messageViewHolder.senderMessageText, Linkify.WEB_URLS | Linkify.PHONE_NUMBERS);
-                Linkify.addLinks(messageViewHolder.senderMessageText, Linkify.ALL );
+                Linkify.addLinks(messageViewHolder.senderLinkText, Linkify.WEB_URLS | Linkify.PHONE_NUMBERS);
+                Linkify.addLinks(messageViewHolder.senderLinkText, Linkify.ALL );
             }
             else
             {
-                messageViewHolder.receiveR.setVisibility(View.VISIBLE);
                 messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
-                messageViewHolder.receiverMessageText.setVisibility(View.VISIBLE);
+                messageViewHolder.linkIn1.setVisibility(View.VISIBLE);
+                messageViewHolder.linkIn.setVisibility(View.VISIBLE);
 
-                messageViewHolder.receiverMessageText.setTextColor(Color.BLACK);
+
+                messageViewHolder.titleR.setText(messages.getTitle());
+                messageViewHolder.descriptionR.setText(messages.getDes());
+
+                new DownloadImageTask(messageViewHolder.linkR).execute(messages.getImg());
+
+                messageViewHolder.receiverLinkText.setVisibility(View.VISIBLE);
+
+                messageViewHolder.receiverLinkText.setTextColor(Color.BLACK);
 
                 SpannableString ss1=  new SpannableString(messages.getMessage());
                 ss1.setSpan(new AbsoluteSizeSpan(20,true), 0, messages.getMessage().length(), SPAN_INCLUSIVE_INCLUSIVE); // set size
@@ -310,16 +458,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 CharSequence finalText = TextUtils.concat(ss1, "\n \n" , ss2);
 
-                messageViewHolder.receiverMessageText.setText(finalText);
-                messageViewHolder.receiverMessageText.setLinkTextColor(Color.parseColor("#2f6699"));
+                messageViewHolder.receiverLinkText.setText(finalText);
+                messageViewHolder.receiverLinkText.setLinkTextColor(Color.parseColor("#2f6699"));
 
-                Linkify.addLinks(messageViewHolder.receiverMessageText, Linkify.WEB_URLS | Linkify.PHONE_NUMBERS);
-                Linkify.addLinks(messageViewHolder.receiverMessageText, Linkify.ALL );
+                Linkify.addLinks(messageViewHolder.receiverLinkText, Linkify.WEB_URLS | Linkify.PHONE_NUMBERS);
+                Linkify.addLinks(messageViewHolder.receiverLinkText, Linkify.ALL );
 
             }
-
-
-
 
 
         }
@@ -329,13 +474,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.sender_seen.setVisibility(View.VISIBLE);
                 if(messages.isIsseen() )
-                    {
-                        messageViewHolder.sender_seen.setText("Seen");
-                    }
-                    else
-                    {
-                        messageViewHolder.sender_seen.setText("Delivered");
-                    }
+                {
+                    messageViewHolder.sender_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_seen.setText("Delivered");
+                }
 
 
                 messageViewHolder.likeS.setVisibility(View.VISIBLE);
@@ -415,13 +560,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.sender_img_seen.setVisibility(View.VISIBLE);
                 if(messages.isIsseen() )
-                    {
-                        messageViewHolder.sender_img_seen.setText("Seen");
-                    }
-                    else
-                    {
-                        messageViewHolder.sender_img_seen.setText("Delivered");
-                    }
+                {
+                    messageViewHolder.sender_img_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_img_seen.setText("Delivered");
+                }
 
 
                 messageViewHolder.messageSenderPicture.setVisibility(View.VISIBLE);
@@ -519,13 +664,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.sender_file_seen.setVisibility(View.VISIBLE);
                 if(messages.isIsseen() )
-                    {
-                        messageViewHolder.sender_file_seen.setText("Seen");
-                    }
-                    else
-                    {
-                        messageViewHolder.sender_file_seen.setText("Delivered");
-                    }
+                {
+                    messageViewHolder.sender_file_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_file_seen.setText("Delivered");
+                }
 
                 messageViewHolder.fileOut.setVisibility(View.VISIBLE);
                 messageViewHolder.fileS.setVisibility(View.VISIBLE);
@@ -594,13 +739,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.sender_file_seen.setVisibility(View.VISIBLE);
                 if(messages.isIsseen() )
-                    {
-                        messageViewHolder.sender_file_seen.setText("Seen");
-                    }
-                    else
-                    {
-                        messageViewHolder.sender_file_seen.setText("Delivered");
-                    }
+                {
+                    messageViewHolder.sender_file_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_file_seen.setText("Delivered");
+                }
 
 
 
@@ -664,14 +809,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             {
                 messageViewHolder.sender_file_seen.setVisibility(View.VISIBLE);
 
-                    if(messages.isIsseen() )
-                    {
-                        messageViewHolder.sender_file_seen.setText("Seen");
-                    }
-                    else
-                    {
-                        messageViewHolder.sender_file_seen.setText("Delivered");
-                    }
+                if(messages.isIsseen() )
+                {
+                    messageViewHolder.sender_file_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_file_seen.setText("Delivered");
+                }
 
 
                 messageViewHolder.fileOut.setVisibility(View.VISIBLE);
@@ -735,14 +880,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.sender_file_seen.setVisibility(View.VISIBLE);
 
-                    if(messages.isIsseen() )
-                    {
-                        messageViewHolder.sender_file_seen.setText("Seen");
-                    }
-                    else
-                    {
-                        messageViewHolder.sender_file_seen.setText("Delivered");
-                    }
+                if(messages.isIsseen() )
+                {
+                    messageViewHolder.sender_file_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_file_seen.setText("Delivered");
+                }
 
                 messageViewHolder.fileOut.setVisibility(View.VISIBLE);
                 messageViewHolder.fileS.setVisibility(View.VISIBLE);
@@ -806,14 +951,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 messageViewHolder.sender_seen.setVisibility(View.VISIBLE);
 
-                    if(messages.isIsseen() )
-                    {
-                        messageViewHolder.sender_seen.setText("Seen");
-                    }
-                    else
-                    {
-                        messageViewHolder.sender_seen.setText("Delivered");
-                    }
+                if(messages.isIsseen() )
+                {
+                    messageViewHolder.sender_seen.setText("Seen");
+                }
+                else
+                {
+                    messageViewHolder.sender_seen.setText("Delivered");
+                }
 
 
                 messageViewHolder.audioOut.setVisibility(View.VISIBLE);
@@ -830,7 +975,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                         if(isFileExists(userMessagesList.get(i).getName())){
                             if(player==null) {
                                 try {
-                                     player = new MediaPlayer();
+                                    player = new MediaPlayer();
                                     player.setAudioStreamType(AudioManager.STREAM_MUSIC);
                                     player.setDataSource(messageViewHolder.itemView.getContext(), Uri.parse(Environment.getExternalStorageDirectory().getAbsolutePath() +
                                             "/ChatApp/" + userMessagesList.get(i).getName().replaceAll(":", "_")+".mp3"));
@@ -848,10 +993,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                     final Handler handler = new Handler() {
                                         public void handleMessage(Message msg) {
 
-                                                messageViewHolder.playS.setBackgroundResource(R.drawable.ic_play);
-                                                messageViewHolder.seekS.setProgress(0);
-                                                player = null;
-                                                timer.cancel();
+                                            messageViewHolder.playS.setBackgroundResource(R.drawable.ic_play);
+                                            messageViewHolder.seekS.setProgress(0);
+                                            player = null;
+                                            timer.cancel();
 
 
                                         }
@@ -959,7 +1104,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                         if (isFileExists(userMessagesList.get(i).getName())) {
                             if (player == null) {
                                 try {
-                                     player = new MediaPlayer();
+                                    player = new MediaPlayer();
                                     player.setAudioStreamType(AudioManager.STREAM_MUSIC);
                                     player.setDataSource(messageViewHolder.itemView.getContext(), Uri.parse(Environment.getExternalStorageDirectory().getAbsolutePath() +
                                             "/ChatApp/" + userMessagesList.get(i).getName().replaceAll(":", "_")+".mp3"));
@@ -977,12 +1122,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                                     final Handler handler = new Handler() {
                                         public void handleMessage(Message msg) {
-                                                messageViewHolder.playR.setBackgroundResource(R.drawable.ic_play);
-                                                messageViewHolder.seekR.setProgress(0);
-                                                player = null;
-                                                timer.cancel();
+                                            messageViewHolder.playR.setBackgroundResource(R.drawable.ic_play);
+                                            messageViewHolder.seekR.setProgress(0);
+                                            player = null;
+                                            timer.cancel();
 
-                                            }
+                                        }
 
 
 
@@ -1116,10 +1261,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
 
     }
+
+
+
     public void stopplay(){
         if(player!=null ) {
             if(player.isPlaying())
-            player.stop();
+                player.stop();
         }
     }
     private boolean isFileExists(String filename){

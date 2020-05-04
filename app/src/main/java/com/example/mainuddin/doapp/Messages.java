@@ -11,6 +11,32 @@ public class Messages
     private String date;
     private String name;
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDes() {
+        return des;
+    }
+
+    public void setDes(String des) {
+        this.des = des;
+    }
+
+    public String getImg() {
+        return img;
+    }
+
+    public void setImg(String img) {
+        this.img = img;
+    }
+
+    private String title,des,img;
+
     public String getLat() {
         return lat;
     }
@@ -46,7 +72,7 @@ public class Messages
 
     }
 
-    public Messages(String from, String message, String type, String to, String messageID, String time, String date, String name,boolean isseen,String lat,String lon) {
+    public Messages(String from, String message, String type, String to, String messageID, String time, String date, String name,boolean isseen,String lat,String lon,String title,String des,String img) {
         this.from = from;
         this.message = message;
         this.type = type;
@@ -58,6 +84,9 @@ public class Messages
         this.isseen = isseen;
         this.lat = lat;
         this.lon = lon;
+        this.title= title;
+        this.des= des;
+        this.img = img;
     }
 
     public String getFrom() {
